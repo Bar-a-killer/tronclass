@@ -1,0 +1,29 @@
+{
+  "name": "tronclass-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "watch": "tsc --watch --project tsconfig.json",
+    "start": "node dist/index.js",
+    "example": "node --env-file=.env example/example.js "
+  },
+  "keywords": [
+    "tronclass",
+    "api"
+  ],
+  "author": "rlongdragon",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jsdom": "^27.0.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "fetch-cookie": "^3.1.0",
+    "jsdom": "^27.0.0",
+    "tough-cookie": "^6.0.0"
+  }
+}
