@@ -208,7 +208,10 @@ class TronClass {
         console.warn(
           "Session not active or expired. Attempting to re-authenticate automatically..."
         );
-        const loginResult = await this.login(this.username, this.password, );
+        // TODO: 這裡的 ocr 函數需要從外部傳入，或者有一個預設的處理方式
+        // 目前暫時使用一個簡單的同步函數來避免錯誤
+        // 這裡應該改成更合適的方式來處理 OCR
+        const loginResult = await this.login(this.username, this.password, async ()=>{return "0000";});
         if (!loginResult.success) {
           throw new Error(
             `Automatic re-authentication failed: ${loginResult.message}. Please log in manually.`
