@@ -36,6 +36,10 @@ Since this project hasn't been uploaded to npm yet, you can import it directly f
 
 First, create a new Node.js project in another folder, then add the following dependency to your `package.json` (please change the path to your local absolute path):
 
+Due to the addition of reCAPTCHA to the NTOU Tronclass login page on 2025/10/13, the OCR text recognition function has been updated.
+You are required to add an OCR parameter to the login function and pass in a function capable of recognizing text from an image.
+If you do not need OCR, you can refer to the login function in the previous version of index.ts.
+
 ```json
 {
   "dependencies": {

@@ -17,7 +17,6 @@ class TronClass {
   baseUrl: string | undefined;
   private username: string | undefined;
   private password: string | undefined;
-  private cookies: string | undefined;
   private jar: CookieJar;
   private fetcher: typeof fetch;
   private loggedIn: boolean = false;
@@ -33,7 +32,8 @@ class TronClass {
 
   public async login(
     username: string,
-    password: string
+    password: string,
+    ocr: (dataUrl: string) => Promise<string>
   ): Promise<loginResponse> {
     if (!username || !password) {
       return {
@@ -59,6 +59,11 @@ class TronClass {
           `${this.baseUrl}/login?next=/user/index`
         );
         const text = await response.text();
+
+        const responseUrl = response.url;
+        // cas baseurl
+        const casBaseUrl = responseUrl.split(".tw/")[0] + ".tw";
+
         const dom = new JSDOM(text);
         // 使用可選鏈操作符 `?.` 安全地獲取值，並檢查其是否存在
         const lt = (
@@ -66,6 +71,31 @@ class TronClass {
             'input[name="lt"]'
           ) as HTMLInputElement | null
         )?.value;
+
+        // get captcha image data URL
+        const imgRes = await this.fetcher(`${casBaseUrl}/cas/captcha.jpg?`);
+        const arrayBuffer = await imgRes.arrayBuffer();
+        const imgBuffer = Buffer.from(arrayBuffer);
+        const base64Image = imgBuffer.toString("base64");
+
+        const contentType = imgRes.headers.get("Content-Type");
+        if (!contentType || !contentType.startsWith("image/")) {
+          throw new Error("Captcha image not found or invalid content type.");
+        }
+        const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+
+        const captchaCode = await ocr(dataUrl);
+
+        // Check if captcha code is valid (4 digits)
+        if (!/^\d{4}$/.test(captchaCode)) {
+          console.error("Invalid captcha code. Must be 4 digits.");
+          return {
+            success: false,
+            message: "Invalid captcha code. Must be 4 digits.",
+          };
+        }
+
+        console.log("Captcha code received:", captchaCode);
 
         if (!lt) {
           throw new Error(
@@ -76,18 +106,23 @@ class TronClass {
         const data = new URLSearchParams({
           username: this.username,
           password: this.password,
+          captcha: captchaCode,
           lt: lt,
           execution: "e1s1",
           _eventId: "submit",
           submit: "登錄", // 登入按鈕的文字，可能因網站而異
         });
 
-        const loginResponse = await this.fetcher(response.url, {
-          method: "POST",
-          body: data,
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          redirect: "follow", // 自動跟隨 HTTP 重定向
-        });
+        console.log(casBaseUrl);
+        const loginResponse = await this.fetcher(
+          `${casBaseUrl}/cas/login?next=/user/index`,
+          {
+            method: "POST",
+            body: data,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            redirect: "follow", // 自動跟隨 HTTP 重定向
+          }
+        );
 
         const loginText = await loginResponse.text();
         // 判斷登入是否成功的邏輯：如果響應包含 "forget-password" 字串，則認為登入失敗
@@ -102,6 +137,7 @@ class TronClass {
         console.log(`Login successful for user: ${username}`);
         return { success: true, message: "Login successful." };
       } catch (e) {
+        console.error(e);
         const errorMessage = e instanceof Error ? e.message : String(e);
         if (e) {
           // 處理登入憑證無效的錯誤
@@ -172,7 +208,7 @@ class TronClass {
         console.warn(
           "Session not active or expired. Attempting to re-authenticate automatically..."
         );
-        const loginResult = await this.login(this.username, this.password);
+        const loginResult = await this.login(this.username, this.password, );
         if (!loginResult.success) {
           throw new Error(
             `Automatic re-authentication failed: ${loginResult.message}. Please log in manually.`

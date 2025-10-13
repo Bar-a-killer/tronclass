@@ -1,4 +1,5 @@
 import Tronclass from "../dist/index.js";
+import captcha from "captcha-nodejs-module";
 
 const username = process.env.TRON_USER;
 const password = process.env.TRON_PASS;
@@ -14,7 +15,7 @@ if (!baseUrl)
 async function main() {
   const tronclass = new Tronclass();
   tronclass.setBaseUrl(baseUrl);
-  await tronclass.login(username, password).then((loginResult) => {
+  await tronclass.login(username, password, captcha).then((loginResult) => {
     if (loginResult.success) {
       console.log("Login succeeded:", loginResult.message);
     } else {

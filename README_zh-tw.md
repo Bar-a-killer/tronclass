@@ -36,6 +36,10 @@ npm run example
 
 你可以先在其他資料夾建立一個新的 Node.js 專案，然後在 `package.json` 中加入以下依賴（請將路徑改成你本地的絕對路徑）：
 
+因海大的 tronclass 在 2025/10/13 登入畫面加入了 repatch，故更新 OCR 辨識文字功能。
+你需要在登入的函數裡面添加 OCR 的參數，並且傳入一個能夠辨識圖片文字的函數。
+如果你不需要 OCR ，可以參考此前版本 index.ts 的 login 函數。
+
 ```json
 {
   "dependencies": {
@@ -52,7 +56,7 @@ import { Tronclass } from "tronclass-api";
 (async () => {
   const tron = new Tronclass();
   const tron.setBaseUrl("https://tronclass.com"); // 你學校的 TronClass 網址
-  await tron.login("your_username", "your_password");
+  await tron.login("your_username", "your_password", ocrFunction);
   const courses = await tron.recentlyVisitedCourses();
   console.log(courses);
 })();
