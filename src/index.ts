@@ -4,7 +4,6 @@ import { JSDOM } from "jsdom";
 import fs from "fs";
 import path from "path";
 import ProgressBar from 'progress';
-
 /**
  * Represents the response from a login attempt.
  * @interface
