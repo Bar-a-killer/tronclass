@@ -1,9 +1,9 @@
 [English](./README.md) | 中文
-
+# 這個項目的大部分code都是抄來的超級奇美拉，尋找原項目還請洽rlongdragon
 # tronclass API
 
 一個非官方的 TronClass（tronclass.com）API 工具庫，封裝登入、會話維護與常用 API 呼叫，方便在 Node.js / TypeScript 專案中自動化存取 TronClass 的使用者資料與課程資訊。
-> 腳本來源 [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script)
+> 腳本來源 [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script),[@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
 
 ## 主要功能
 
