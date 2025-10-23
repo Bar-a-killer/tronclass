@@ -1,9 +1,9 @@
 English | [中文](./README_zh-tw.md)
-
+# The codes from this project are most from rlongdragon so you should go there to see the hole project
 # tronclass API
 
 An unofficial TronClass (tronclass.com) API library, encapsulating login, session maintenance, and common API calls to facilitate automated access to TronClass user data and course information in Node.js / TypeScript projects.
-> Script source: [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script)
+> Script source: [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script),[@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
 
 ## Key Features
 

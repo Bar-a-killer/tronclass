@@ -3,7 +3,8 @@ import { CookieJar } from "tough-cookie";
 import { JSDOM } from "jsdom";
 import fs from "fs";
 import path from "path";
-import cliProgress from 'cli-progress';
+import ProgressBar from 'progress';
+
 /**
  * Represents the response from a login attempt.
  * @interface
@@ -278,15 +279,7 @@ class TronClass {
     let tmp_log: any[] = [];
     
     // 進度條設定
-    const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-    bar.start(ses * ran, 0);
-    const safeIncrement = (() => {
-      const lock = Promise.resolve();
-      return async () => {
-        await lock;
-        bar.increment();
-      };
-    })();
+    const bar = new ProgressBar(':bar :percent', { total: 100, width: 40 });
 
     const inner = async (sesId: number) => {
       
@@ -308,14 +301,13 @@ class TronClass {
             status: _resp.status,
             data: _json,
             code: numberCode, },rcid);
+          bar.update(succeed / (ses * ran));
           // tmp_log.push({ url: _resp.url,
           //   status: _resp.status,
           //   data: _json,
           //   code: numberCode, },rcid);
         } catch (e: any) {
           //console.log(e.message);
-        } finally {
-          await safeIncrement();
         }
       }
     };
@@ -329,7 +321,7 @@ class TronClass {
     //   await this.log(`${this.PATH}/num/${rcid}.log`, logEntry);
     // }
     // 完成進度條
-    bar.stop();
+    bar.terminate();
     console.log("🎯 Done!");
     console.log(`Total spend: ${spend}s, last code: ${code}`);
     // 總結 log
@@ -341,7 +333,6 @@ class TronClass {
       opened_session: ses,
       request_per_session: ran,
     });
-    await Promise.all(Array.from({ length: ses }, (_, i) => inner(i)));
 
     return code;
   }
