@@ -1,10 +1,20 @@
 import Tronclass from "../dist/index.js";
 import captcha from "../ocr/js/ocr.js";
 
-const username = process.env.TRON_USER;
-const password = process.env.TRON_PASS;
-const baseUrl = process.env.TRON_BASE_URL;
-const intervalMs = process.env.TRON_INTERVAL;
+import fs from "fs";
+import path from "path";
+import YAML from "yaml";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const config = YAML.parse(
+  fs.readFileSync(path.resolve(__dirname, "config.yaml"), "utf8")
+);
+const username = config.tron.TRON_USER;
+const password = config.tron.TRON_PASS;
+const baseUrl = config.tron.TRON_BASE_URL;
+const intervalMs = config.tron.TRON_INTERVAL;
+
 if (!username)
   throw new Error("Please set the TRON_USER environment variable.");
 if (!password)
