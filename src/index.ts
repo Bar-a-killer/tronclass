@@ -271,69 +271,159 @@ class TronClass {
   }
 
 
-  private async number(rcid: number, ses = 25, ran = 400): Promise<string> {
-    let succeed = 0;
-    let code = "-1";
+  private async number(
+    rcid: number,
+    ses = 25,
+    ran = 400,
+    earlyStop = true // 找到正確碼就提前停止
+  ): Promise<string> {
+    let attempts = 0;
+    let foundCode = "-1";
     const device = this.randomId();
-    let tmp_log: any[] = [];
-    
-    // 進度條設定
-    const bar = new ProgressBar(':bar :percent', { total: 100, width: 40 });
+    const totalPlanned = Math.min(10000, ses * ran); // 最多4位數(0000~9999)
 
-    const inner = async (sesId: number) => {
-      
-      for (let i = 0; i < ran; i++) {
-        const numberCode = `${(sesId * ran + i).toString().padStart(4, "0")}`;
-        const payload = { deviceId: device, numberCode };
-        let _resp: any;
-        let _json: any;
+    // === 進度條 ===
+    const bar = new ProgressBar(":bar :percent (:current/:total)", {
+      total: totalPlanned,
+      width: 40,
+    });
+
+    const logPath = `${this.PATH}/num/${rcid}.log`;
+    const log = (entry: any) => this.log(logPath, entry, rcid);
+
+    // === 安全解析回應 ===
+    const safeParse = async (resp: Response) => {
+      const url = (resp as any).url ?? "";
+      const ct = resp.headers.get("content-type") || "";
+      const text = await resp.text();
+      let parsed: any = null;
+
+      if (ct.includes("application/json")) {
         try {
-          _resp = await this.call(`/api/rollcall/${rcid}/answer_number_rollcall`, {
-            method: "PUT",
-            body: JSON.stringify(payload),
-          });
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = { raw: text.slice(0, 300) };
+        }
+      } else if (text.trim().startsWith("<")) {
+        parsed = { html: true, head: text.slice(0, 300) };
+      } else {
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = { raw: text.slice(0, 300) };
+        }
+      }
 
-          succeed += 1;
-          code = numberCode;
-          _json = await _resp.json();
-          await this.log(`${this.PATH}/num/${rcid}.log`,{ url: _resp.url,
-            status: _resp.status,
-            data: _json,
-            code: numberCode, },rcid);
-          bar.update(succeed / (ses * ran));
-          // tmp_log.push({ url: _resp.url,
-          //   status: _resp.status,
-          //   data: _json,
-          //   code: numberCode, },rcid);
+      return { url, ct, text, data: parsed };
+    };
+
+    // === 早停旗標 ===
+    let found = false;
+
+    // === Worker ===
+    const inner = async (sesId: number) => {
+      for (let i = 0; i < ran; i++) {
+        if (found && earlyStop) break; // 已找到則不繼續新請求
+        const idx = sesId * ran + i;
+        if (idx >= 10000) break; // 超過4位數上限
+
+        const numberCode = idx.toString().padStart(4, "0");
+        const payload = { deviceId: device, numberCode };
+
+        let resp: any;
+        try {
+          resp = await this.call(
+            `/api/rollcall/${rcid}/answer_number_rollcall`,
+            {
+              method: "PUT",
+              body: JSON.stringify(payload),
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+              },
+            }
+          );
+
+          const { url, ct, data, text } = await safeParse(resp);
+          attempts += 1;
+          if (attempts <= totalPlanned)
+            bar.update(attempts / totalPlanned);
+
+          // === 狀態分支 ===
+          if (resp.status === 200) {
+            foundCode = numberCode;
+            found = true;
+            await log({
+              url,
+              status: resp.status,
+              ct,
+              data,
+              code: numberCode,
+              note: "OK",
+            });
+            if (earlyStop) break;
+          } else if (resp.status === 400) {
+            await log({
+              url,
+              status: resp.status,
+              ct,
+              data,
+              code: numberCode,
+              note: "wrong code / 400",
+            });
+          } else {
+            await log({
+              url,
+              status: resp.status,
+              ct,
+              head:
+                typeof data === "object" && data?.html
+                  ? data.head
+                  : (text || "").slice(0, 300),
+              code: numberCode,
+              note: "non-200/400",
+            });
+          }
         } catch (e: any) {
-          //console.log(e.message);
+          await log({
+            url: resp?.url ?? "<no-url>",
+            status: resp?.status ?? -1,
+            code: numberCode,
+            error: e?.message || String(e),
+            note: "exception",
+          });
+          await new Promise((r) => setTimeout(r, 1200)); // 輕微退避
         }
       }
     };
 
+    // === 啟動所有 worker ===
     const start = performance.now();
-    // 並行多個 session
     await Promise.all(Array.from({ length: ses }, (_, i) => inner(i)));
+
+    // === 總結 ===
     const spend = (performance.now() - start) / 1000;
-    // 寫入暫存 log
-    // for (const logEntry of tmp_log) {
-    //   await this.log(`${this.PATH}/num/${rcid}.log`, logEntry);
-    // }
-    // 完成進度條
     bar.terminate();
     console.log("🎯 Done!");
-    console.log(`Total spend: ${spend}s, last code: ${code}`);
-    // 總結 log
-    await this.log(`${this.PATH}/num/${rcid}.log`, {
-      summary: true,
-      code,
-      spend_time: spend,
-      succeed_cnt: succeed,
-      opened_session: ses,
-      request_per_session: ran,
-    });
+    console.log(
+      `Total spend: ${spend}s, attempts: ${attempts}, last code: ${foundCode}`
+    );
 
-    return code;
+    await this.log(
+      logPath,
+      {
+        summary: true,
+        code: foundCode,
+        spend_time: spend,
+        attempts,
+        opened_session: ses,
+        request_per_session: ran,
+        early_stop: !!earlyStop,
+      },
+      rcid
+    );
+
+    return foundCode;
   }
 
   public async checkRollcall(cnt = -1) {

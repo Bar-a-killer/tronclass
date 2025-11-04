@@ -27,14 +27,22 @@ async function main() {
   // await tronclass.recentlyVisitedCourses().then((data) => {
   //   console.log("Recently visited courses:", data);
   // });
-  setInterval(async () => {
-    try {
-      await tronclass.checkRollcall(5, 300);
-      console.log("Finished checking roll calls.");
-    } catch (err) {
-      console.error("Error checking roll calls:", err);
+
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  (async function poll() {
+    var cnt = 0;
+    for (;;) {
+      try {
+        await tronclass.checkRollcall(cnt++);
+        console.log("Finished checking roll calls.");
+      } catch (err) {
+        console.error("Error checking roll calls:", err);
+      }
+      await sleep(intervalMs);
     }
-  }, intervalMs);
+  })();
+
 }
 
 main();
