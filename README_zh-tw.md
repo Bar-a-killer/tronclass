@@ -32,12 +32,13 @@ npm run build
 ```bash
 npm run example
 ```
-或在./下建立一個`.env`檔並填入帳號密碼、TronClass網址與期望間隔掃描時間，範例如下:
+或在./example下建立一個`config.yaml`檔並填入帳號密碼、TronClass網址與期望間隔掃描時間，範例如下:
 ```bash
-TRON_USER = "accountname"
-TRON_PASS = "password"
-TRON_BASE_URL = "https://tronclass.ntou.edu.tw"
-TRON_INTERVAL = 10000
+tron:
+  TRON_USER: "accountname"
+  TRON_PASS: "password"
+  TRON_BASE_URL: "https://tronclass.ntou.edu.tw"
+  TRON_INTERVAL: 10000
 ```
 ## 使用說明
 因為此專案還沒上傳到 npm，你可以直接從本地路徑引入：
