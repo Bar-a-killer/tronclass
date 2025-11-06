@@ -70,5 +70,5 @@ Thumbs.db
 # Other common ignored files
 *.orig
 *.swp
-
+package-lock.json
 /dist/
