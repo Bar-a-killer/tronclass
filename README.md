@@ -1,64 +1,85 @@
-English | [中文](./README_zh-tw.md)
-# The codes from this project are most from rlongdragon so you should go there to see the hole project
-# tronclass API
+[中文](./README_zh-tw.md) | English
 
-An unofficial TronClass (tronclass.com) API library, encapsulating login, session maintenance, and common API calls to facilitate automated access to TronClass user data and course information in Node.js / TypeScript projects.
-> Script source: [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script),[@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
+# TronClass API
 
-## Key Features
+This project is a **super hybrid** of various open-source codes — most of its logic is borrowed or adapted from other projects.
+If you want to find the original sources, please contact **rlongdragon**.
 
-- Automatically handles sessions after login using a cookie jar.
-- Parses the login page to extract the CSRF token (lt) and complete form-based login.
-- Automatic retries and a simple error handling mechanism.
-- Provides simple wrapper methods (e.g., `recentlyVisitedCourses`) and a generic `call` method to invoke any API endpoint.
+> Main script sources: [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script), [@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
+> OCR model from [AutoVerify](https://chromewebstore.google.com/detail/autoverify/jgcfgcdociopaedpeiacalnccfiaeeej?hl=en)
 
-## Directory Structure
+---
 
-- `src/` - TypeScript source code.
-- `dist/` - Compiled JavaScript (if built).
-- `example/` - Usage example (`example/example.js`).
+## ✨ Features
 
-## Quick Start
+* Periodically scans for rollcalls within a specified time interval
+* Automatically solves **number rollcalls**
+* Reports progress and status to **Discord**
 
-After cloning this project:
+---
+
+## 📁 Directory Structure
+
+* `src/` - TypeScript source code
+* `dist/` - Compiled JavaScript output (after running `npm run build`)
+* `example/` - Main logic folder (**todo:** rename this folder later)
+* `ocr/` - OCR model used to solve the NTOU TronClass CAPTCHA
+
+---
+
+## 🚀 Quick Start
+
+First, install **Node.js** and **npm**.
+
+Then clone this repository and install dependencies:
+
 ```bash
 npm install
 npm run build
 ```
 
-Fill in your TronClass username and password in `example/example.js`, then run the example:
+### Configure your TronClass credentials
+
+You can either:
+
+* Edit `example/example.js` directly and fill in your account info, **or**
+* Create a `config.yaml` file in the `example/` folder with the following content:
+
+```yaml
+tron:
+  TRON_USER: "accountname"
+  TRON_PASS: "password"
+  TRON_BASE_URL: "https://tronclass.ntou.edu.tw"
+  TRON_INTERVAL: 10000
+webhook: "https://your/discord/webhook"
+```
+
+Then start the scheduled rollcall service:
+
 ```bash
-npm run example
+pm2 start example/scheduler.js --name tronclass-scheduler
 ```
 
-## Usage Instructions
-Since this project hasn't been uploaded to npm yet, you can import it directly from a local path:
+---
 
-First, create a new Node.js project in another folder, then add the following dependency to your `package.json` (please change the path to your local absolute path):
+## ⚙️ Usage Notes
 
-Due to the addition of reCAPTCHA to the NTOU Tronclass login page on 2025/10/13, the OCR text recognition function has been updated.
-You are required to add an OCR parameter to the login function and pass in a function capable of recognizing text from an image.
-If you do not need OCR, you can refer to the login function in the previous version of index.ts.
+Since **NTOU TronClass** added **reCAPTCHA** on its login page (as of *2025/10/13*),
+this version includes **OCR-based text recognition** to bypass it.
 
-```json
-{
-  "dependencies": {
-    "tronclass-api": "file:/absolute/path/to/tronclass-api"
-  } 
-}
-```
+If you don’t need OCR, you can refer to the **previous version** of `index.ts` and its `login` function.
+The login logic has been modularized, so you can easily swap in **rlongdragon’s** older version of `index.ts` if you prefer.
 
-Then, use it in your code like this:
+---
 
-```javascript
-import { Tronclass } from "tronclass-api";
+## ⚠️ Warning
 
-(async () => {
-  const tron = new Tronclass();
-  tron.setBaseUrl("https://tronclass.com"); // Your school's TronClass URL
-  await tron.login("your_username", "your_password");
-  const courses = await tron.recentlyVisitedCourses();
-  console.log(courses);
-})();
-```
-> English vision translate by AI
+Although this project is open source,
+**excessive simultaneous use** may cause TronClass servers to slow down or temporarily block access.
+If the school updates the login system again, this program might stop working.
+Please use it responsibly — it’s meant for occasional use (e.g., early morning rollcalls 😴),
+not as a full-time replacement for class attendance.
+
+Otherwise... maybe consider taking a semester off. 😅
+
+translate by chatgpt

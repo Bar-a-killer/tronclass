@@ -2,22 +2,21 @@
 # 這個項目的大部分code都是抄來的超級奇美拉，尋找原項目還請洽rlongdragon
 # tronclass API
 
-一個非官方的 TronClass（tronclass.com）API 工具庫，封裝登入、會話維護與常用 API 呼叫，方便在 Node.js / TypeScript 專案中自動化存取 TronClass 的使用者資料與課程資訊。
+點名機2號，大部分邏輯來自slivecow002，登入邏輯來自阿龍。
 > 腳本來源 [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script),[@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
 
 >Ocr模型來源 [AutoVerefy](https://chromewebstore.google.com/detail/autoverify/jgcfgcdociopaedpeiacalnccfiaeeej?hl=zh-TW)
 ## 主要功能
 
-- 使用 cookie jar 自動處理登入後的 session。
-- 解析登入頁面以抓取 CSRF token（lt）並完成表單登入。
-- 自動重試與簡單的錯誤處理機制。
-- 提供簡單的包裝方法（例如 `recentlyVisitedCourses`）與通用的 `call` 方法以呼叫任意 API endpoint。
+- 在規定時間中定時掃描是否點名
+- 自動破解數字點名
+- Discord回報進度
 
 ## 目錄
 
 - `src/` - TypeScript 原始碼。
 - `dist/` - 編譯後的 JavaScript（若已 build）。
-- `example/` - 使用範例（`example/example.js`）。
+- `example/` - 主要邏輯(todo : 改掉這個資料夾名稱)。
 - `ocr/` - ocr模型套件 用來解海大圖形辨識介面
 ## 快速開始
 下載nodejs,npm
@@ -28,10 +27,7 @@ npm install
 npm run build
 ```
 
-在 `example/example.js` 中填入你的 TronClass 帳號密碼，然後執行範例：
-```bash
-npm run example
-```
+在 `example/example.js` 中填入你的 TronClass 帳號密碼
 或在./example下建立一個`config.yaml`檔並填入帳號密碼、TronClass網址與期望間隔掃描時間，範例如下:
 ```bash
 tron:
@@ -39,36 +35,15 @@ tron:
   TRON_PASS: "password"
   TRON_BASE_URL: "https://tronclass.ntou.edu.tw"
   TRON_INTERVAL: 10000
+webhook: "https://your/discord/webhook"
+```
+，然後執行：
+```bash
+pm2 start example/scheduler.js --name tronclass-scheduler
 ```
 ## 使用說明
-因為此專案還沒上傳到 npm，你可以直接從本地路徑引入：
-
-你可以先在其他資料夾建立一個新的 Node.js 專案，然後在 `package.json` 中加入以下依賴（請將路徑改成你本地的絕對路徑）：
-
 因海大的 tronclass 在 2025/10/13 登入畫面加入了 reCAPTCHA，故更新 OCR 辨識文字功能。
-你需要在登入的函數裡面添加 OCR 的參數，並且傳入一個能夠辨識圖片文字的函數。
 如果你不需要 OCR ，可以參考此前版本 index.ts 的 login 函數。
+而且我把登入邏輯隔離開了，所以理論上你可以把阿龍的舊版本替換掉index.ts來實現。
 
-```json
-{
-  "dependencies": {
-    "tronclass-api": "file:/absolute/path/to/tronclass-api",
-    "Ocr": "file:/absolute/path/to/tronclass-api/ocr"
-  } 
-}
-```
-
-然後在你的程式碼中這樣使用：
-
-```javascript
-import { Tronclass } from "tronclass-api";
-import { captcha } from "Ocr";
-(async () => {
-  const tron = new Tronclass();
-  const tron.setBaseUrl("https://tronclass.com"); // 你學校的 TronClass 網址
-  await tron.login("your_username", "your_password", captcha);
-  const courses = await tron.recentlyVisitedCourses();
-  console.log(courses);
-})();
-```
-
+# 警告:雖然此機器是開源的，過多人同時使用依然可能導致服務塞住。圖資處更新登入介面後可能將無法破解，能上課還是盡量去上課，這玩意偶爾早八用就好。不然可以考慮休學。
