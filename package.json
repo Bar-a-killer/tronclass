@@ -9,7 +9,7 @@
     "build": "tsc",
     "watch": "tsc --watch --project tsconfig.json",
     "start": "node dist/index.js",
-    "example": "node --env-file=.env example/example.js "
+    "example": "node example/example.js "
   },
   "keywords": [
     "tronclass",
