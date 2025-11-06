@@ -1,0 +1,10 @@
+tron:
+  TRON_USER: 'account123'
+  TRON_PASS: 'password123'
+  TRON_BASE_URL: 'https://tronclass.ntou.edu.tw'
+  TRON_INTERVAL: 5000
+scheduler:
+  START_HOUR: 5
+  STOP_HOUR: 18
+  CHECK_INTERVAL: 1
+webhook: 'https://discordapp.com/api/webhooks/1111111111/AAAA'

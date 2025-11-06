@@ -21,27 +21,24 @@
 ## 快速開始
 下載nodejs,npm
 
-clone 此專案後
-```bash
-npm install
-npm run build
-```
+啟動tronclass.bat
 
-在 `example/example.js` 中填入你的 TronClass 帳號密碼
-或在./example下建立一個`config.yaml`檔並填入帳號密碼、TronClass網址與期望間隔掃描時間，範例如下:
-```bash
-tron:
-  TRON_USER: "accountname"
-  TRON_PASS: "password"
-  TRON_BASE_URL: "https://tronclass.ntou.edu.tw"
-  TRON_INTERVAL: 10000
-webhook: "https://your/discord/webhook"
-```
+填入你的帳號密碼
+tronclass網址
+自動掃描頻率(推薦10000-15000)
+程式啟動時間(24時制所以大概是早八到十七點)
+程式自動啟動的刷新時間(推薦15-60)
+webhook
 (webhook部分可以參考[webhook教學](https://ninglab.com/Discord-Webhook-bot/))
-，然後執行：
-```bash
-pm2 start example/scheduler.js --name tronclass-scheduler
-```
+
+按下儲存
+
+start:開始程序
+list:檢查執行中的程序
+stop:停止程序
+delete:刪除程序
+
+打開package.json可以發現我其實也有包一些不常用的東西，熟悉terminal可以使用
 ## 使用說明
 因海大的 tronclass 在 2025/10/13 登入畫面加入了 reCAPTCHA，故更新 OCR 辨識文字功能。
 如果你不需要 OCR ，可以參考此前版本 index.ts 的 login 函數。

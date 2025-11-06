@@ -8,13 +8,35 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc",
     "watch": "tsc --watch --project tsconfig.json",
-    "start": "node dist/index.js",
-    "example": "node example/example.js ",
-    "scheduler": "pm2 start example/scheduler.js --name tronclass-scheduler",
+    "main": "node maincode/main.js ",
+    "start": "pm2 start maincode/main.js --name tronclass && pm2 start maincode/scheduler.js --name tronclass-scheduler",
     "delete": "pm2 delete tronclass-scheduler && pm2 delete tronclass",
     "list": "pm2 list",
     "logs": "pm2 logs",
-    "stop": "pm2 stop tronclass-scheduler && pm2 stop tronclass"
+    "stop": "pm2 stop tronclass-scheduler && pm2 stop tronclass",
+    "reload": "pm2 reload tronclass-scheduler && pm2 reload tronclass",
+    "server": "node maincode/server.js",
+
+    "build:ui": "cd client && npm run build",
+    "ui" : "cd client && npm run dev",
+    "build:pkg": "pkg ."
+  },
+  "bin": {
+    "tronclass-api": "maincode/server.js" 
+  },
+  "pkg": {
+    "scripts": [
+      "maincode/server.js"
+    ],
+    "targets": [
+      "node16-win-x64"
+    ],
+    "assets": [
+      "client/dist/**/*",
+      "yamls/**/*",
+      "package.json",
+      "ocr/**/*"
+    ]
   },
   "keywords": [
     "tronclass",
@@ -25,7 +47,8 @@
   "devDependencies": {
     "@types/jsdom": "^27.0.0",
     "@types/progress": "^2.0.7",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "pkg": "^5.8.1"
   },
   "dependencies": {
     "canvas": "^3.2.0",
@@ -36,6 +59,8 @@
     "progress": "^2.0.3",
     "tough-cookie": "^6.0.0",
     "pm2": "^5.3.0",
-    "yaml": "2.8.1"
+    "yaml": "2.8.1",
+    "express": "^4.18.2", 
+    "cors": "^2.8.5"
   }
 }

@@ -2,10 +2,23 @@ import { exec } from "child_process";
 import { start } from "repl";
 import { discordNotify } from "./notify.js";
 
+import fs from "fs";
+import path from "path";
+import YAML from "yaml";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const config = YAML.parse(
+  fs.readFileSync(path.resolve(__dirname, "yamls/config.yaml"), "utf8")
+);
+
 const TARGET = "tronclass";
-const START_TIME = 5;
-const STOP_TIME = 18;
-const CHECK_INTERVAL_MIN = 5;
+const START_TIME = config.scheduler.START_HOUR;
+const STOP_TIME =  config.scheduler.STOP_HOUR;
+const CHECK_INTERVAL_MIN = config.scheduler.CHECK_INTERVAL;
+if(!START_TIME || !STOP_TIME || !CHECK_INTERVAL_MIN) {
+  throw new Error("Please set START_HOUR, STOP_HOUR, and CHECK_INTERVAL in config.yaml");
+}
 var started = false;
 function checkTimeAndControl() {
   const now = new Date();

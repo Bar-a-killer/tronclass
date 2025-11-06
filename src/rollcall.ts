@@ -2,7 +2,7 @@ import fetchCookie from "fetch-cookie";
 import { CookieJar } from "tough-cookie";
 import { JSDOM } from "jsdom";
 //@ts-ignore
-import { discordNotify } from "../example/notify.js";
+import { discordNotify } from "../maincode/notify.js";
 import Tronclass from "./index.js";
 import fs from "fs";
 import path from "path";

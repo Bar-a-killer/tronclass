@@ -12,9 +12,9 @@ const __dirname = path.dirname(__filename);
 // === 讀取 config.yaml ===
 let WEBHOOK_URL = "";
 try {
-  const yamlPath = path.resolve(__dirname, "config.yaml");
+  const yamlPath = path.resolve(__dirname, "yamls/config.yaml");
   const config = YAML.parse(fs.readFileSync(yamlPath, "utf8"));
-  WEBHOOK_URL = config.webhook || "";
+  WEBHOOK_URL = config.webhook.webhook_url || "";
   if (!WEBHOOK_URL) console.warn("⚠️ config.yaml 找不到 webhook 欄位。");
 } catch (err) {
   console.warn("⚠️ 無法讀取 config.yaml：", err.message);

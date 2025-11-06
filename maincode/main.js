@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const config = YAML.parse(
-  fs.readFileSync(path.resolve(__dirname, "config.yaml"), "utf8")
+  fs.readFileSync(path.resolve(__dirname, "yamls/config.yaml"), "utf8")
 );
 const username = config.tron.TRON_USER;
 const password = config.tron.TRON_PASS;
