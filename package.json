@@ -9,7 +9,12 @@
     "build": "tsc",
     "watch": "tsc --watch --project tsconfig.json",
     "start": "node dist/index.js",
-    "example": "node example/example.js "
+    "example": "node example/example.js ",
+    "scheduler": "pm2 start example/scheduler.js --name tronclass-scheduler",
+    "delete": "pm2 delete tronclass-scheduler && pm2 delete tronclass",
+    "list": "pm2 list",
+    "logs": "pm2 logs",
+    "stop": "pm2 stop tronclass-scheduler && pm2 stop tronclass"
   },
   "keywords": [
     "tronclass",
