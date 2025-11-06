@@ -210,20 +210,20 @@ class TronClass {
     // 檢查是否已登入。如果未登入且已儲存憑證，則嘗試自動重新驗證。
     if (!this.loggedIn) {
       if (this.username && this.password) {
-        console.warn(
-          "Session not active or expired. Attempting to re-authenticate automatically..."
-        );
-        // TODO: 這裡的 ocr 函數需要從外部傳入，或者有一個預設的處理方式
-        // 目前暫時使用一個簡單的同步函數來避免錯誤
-        // 這裡應該改成更合適的方式來處理 OCR
-        const loginResult = await this.login(this.username, this.password, async ()=>{return "0000";});
-        if (!loginResult.success) {
-          throw new Error(
-            `Automatic re-authentication failed: ${loginResult.message}. Please log in manually.`
-          );
-        }
-        console.log("Automatic re-authentication successful.");
-      } else {
+      //   console.warn(
+      //     "Session not active or expired. Attempting to re-authenticate automatically..."
+      //   );
+      //   // TODO: 這裡的 ocr 函數需要從外部傳入，或者有一個預設的處理方式
+      //   // 目前暫時使用一個簡單的同步函數來避免錯誤
+      //   // 這裡應該改成更合適的方式來處理 OCR
+      //   const loginResult = await this.login(this.username, this.password, async ()=>{return "0000";});
+      //   if (!loginResult.success) {
+      //     throw new Error(
+      //       `Automatic re-authentication failed: ${loginResult.message}. Please log in manually.`
+      //     );
+      //   }
+      //   console.log("Automatic re-authentication successful.");
+      // } else {
         throw new Error(
           "Not logged in and no credentials saved for re-authentication. Please call the login method first."
         );
@@ -237,7 +237,9 @@ class TronClass {
     
     return response;
   }
-
+  public IsloggedIn() {
+    return this.loggedIn;
+  }
   public recentlyVisitedCourses() {
     return this.call("/api/user/recently-visited-courses").then((res) =>
       res.json()

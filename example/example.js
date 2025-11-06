@@ -25,15 +25,31 @@ if (!baseUrl)
 async function main() {
   const tronclass = new Tronclass();
   tronclass.setBaseUrl(baseUrl);
+  var n = 3;
+  while (n-- > 0) {
   await tronclass.login(username, password, captcha).then((loginResult) => {
     if (loginResult.success) {
       console.log("Login succeeded:", loginResult.message);
+        discordNotify(username + " Login succeeded: " + loginResult.message);
     } else {
       console.error("Login failed:", loginResult.message);
+        discordNotify(username + " Login failed: " + loginResult.message);
       return;
     }
   });
-  //await tronclass.number(-1);
+    if (tronclass.IsloggedIn()) break;
+    console.log("Retrying login...");
+    discordNotify(username + " Retrying login...");
+  }
+  if (!tronclass.IsloggedIn()) {
+    console.error("Failed to log in after multiple attempts. Exiting.");
+    discordNotify(
+      username + " Failed to log in after multiple attempts. Exiting."
+    );
+    return;
+  }
+  const rollcall = new Rollcall(tronclass);
+  await rollcall.number(-1);
   // await tronclass.recentlyVisitedCourses().then((data) => {
   //   console.log("Recently visited courses:", data);
   // });
@@ -48,6 +64,7 @@ async function main() {
         console.log("Finished checking roll calls.");
       } catch (err) {
         console.error("Error checking roll calls:", err);
+        discordNotify(username + " Error checking roll calls: " + err);
       }
       await sleep(intervalMs);
     }
