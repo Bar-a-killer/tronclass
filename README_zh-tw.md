@@ -37,6 +37,7 @@ tron:
   TRON_INTERVAL: 10000
 webhook: "https://your/discord/webhook"
 ```
+(webhook部分可以參考[webhook教學](https://ninglab.com/Discord-Webhook-bot/))
 ，然後執行：
 ```bash
 pm2 start example/scheduler.js --name tronclass-scheduler
