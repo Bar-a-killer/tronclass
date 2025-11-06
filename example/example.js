@@ -1,5 +1,7 @@
 import Tronclass from "../dist/index.js";
+import Rollcall from "../dist/rollcall.js";
 import captcha from "../ocr/js/ocr.js";
+import { discordNotify } from "./notify.js";
 
 import fs from "fs";
 import path from "path";
@@ -27,16 +29,16 @@ async function main() {
   tronclass.setBaseUrl(baseUrl);
   var n = 3;
   while (n-- > 0) {
-  await tronclass.login(username, password, captcha).then((loginResult) => {
-    if (loginResult.success) {
-      console.log("Login succeeded:", loginResult.message);
+    await tronclass.login(username, password, captcha).then((loginResult) => {
+      if (loginResult.success) {
+        console.log("Login succeeded:", loginResult.message);
         discordNotify(username + " Login succeeded: " + loginResult.message);
-    } else {
-      console.error("Login failed:", loginResult.message);
+      } else {
+        console.error("Login failed:", loginResult.message);
         discordNotify(username + " Login failed: " + loginResult.message);
-      return;
-    }
-  });
+        return;
+      }
+    });
     if (tronclass.IsloggedIn()) break;
     console.log("Retrying login...");
     discordNotify(username + " Retrying login...");
@@ -49,7 +51,7 @@ async function main() {
     return;
   }
   const rollcall = new Rollcall(tronclass);
-  await rollcall.number(-1);
+  //await rollcall.number(-1);
   // await tronclass.recentlyVisitedCourses().then((data) => {
   //   console.log("Recently visited courses:", data);
   // });
@@ -60,7 +62,7 @@ async function main() {
     var cnt = 0;
     for (;;) {
       try {
-        await tronclass.checkRollcall(cnt++);
+        await rollcall.checkRollcall(cnt++);
         console.log("Finished checking roll calls.");
       } catch (err) {
         console.error("Error checking roll calls:", err);
