@@ -19,7 +19,7 @@
 - `example/` - 主要邏輯(todo : 改掉這個資料夾名稱)。
 - `ocr/` - ocr模型套件 用來解海大圖形辨識介面
 ## 快速開始
-下載nodejs,npm
+下載[nodejs](https://nodejs.org/en/download/)
 
 啟動tronclass.bat
 

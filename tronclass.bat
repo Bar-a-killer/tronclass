@@ -13,7 +13,7 @@ echo ===========================================
 echo.
 
 REM --- Step 1: Install Dependencies (Synchronous) ---
-echo [1/3] Checking dependencies... This may take a moment.
+echo [1/4] Checking dependencies... This may take a moment.
 call npm install
 if errorlevel 1 (
 echo.
@@ -22,7 +22,7 @@ goto :end
 )
 
 echo.
-echo [2/3] Installing client dependencies...
+echo [2/4] Installing client dependencies...
 cd client
 call npm install
 if errorlevel 1 (
@@ -31,10 +31,19 @@ echo ERROR: npm install failed in client directory. Please check logs.
 goto :end
 )
 cd ..
-
+REM --- Step 2: Compile Main Application Code ---
+echo.
+echo [3/4] Compiling main application code (npm run build)...
+REM runing build script to compile TypeScript code
+call npm run build
+if errorlevel 1 (
+echo.
+echo ERROR: Main application compilation failed. Check your TypeScript configuration.
+goto :end
+)
 REM --- Step 2: Start Backend API Service (Non-blocking) ---
 echo.
-echo [3/3] Launching backend API service (Port %BACKEND_PORT%)...
+echo [4/4] Launching backend API service (Port %BACKEND_PORT%)...
 start "Backend Server" cmd /k "npm run server"
 
 REM --- Step 3: Start Frontend Vite Dev Server (Non-blocking) ---
