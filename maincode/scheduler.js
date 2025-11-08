@@ -25,21 +25,26 @@ function checkTimeAndControl() {
   const hour = now.getHours();
   const day = now.getDay();
 
-  if ((day === 0 || day === 6) && started) {
-    console.log("🛌 Weekend detected, stopping tronclass.");
-    stopTronclass();
-    started = false;
-    return;
+  if (day === 0 || day === 6) {
+    if(started) {
+      console.log("🛌 Weekend detected, stopping tronclass.");
+      stopTronclass();
+      started = false;
+      return;
+    }
   }
-  const isRunningTime = (hour >= START_TIME && hour < STOP_TIME);
-  if (isRunningTime && !started) {
-    startTronclass();
-    started = true;
+  else {
+    const isRunningTime = (hour >= START_TIME && hour < STOP_TIME);
+      if (isRunningTime && !started) {
+        startTronclass();
+        started = true;
+      }
+      if(!isRunningTime && started) {
+        stopTronclass();
+        started = false;
+    }
   }
-  if(!isRunningTime && started) {
-    stopTronclass();
-    started = false;
-  }
+  
 }
 
 function startTronclass() {
