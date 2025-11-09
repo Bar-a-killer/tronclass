@@ -444,17 +444,17 @@ function App() {
             </h2>
             <div className="h-64 overflow-y-scroll bg-black text-xs p-3 rounded-lg border border-gray-700 font-mono space-y-1">
               {logOutput.length === 0 ? (
-                <p className="text-gray-500">等待腳本執行或系統訊息...</p>
+                <pre className="text-gray-500">等待腳本執行或系統訊息...</pre>
               ) : (
                 logOutput.map((log, index) => (
-                  <p key={index} className={
+                  <pre key={index} className={
                     log.type === 'error' ? 'text-red-400' :
                     log.type === 'success' ? 'text-green-400' :
                     log.type === 'info' ? 'text-blue-300' :
                     'text-gray-300'
                   }>
                     <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
-                  </p>
+                  </pre>
                 ))
               )}
             </div>
