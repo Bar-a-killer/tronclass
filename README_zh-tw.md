@@ -19,24 +19,39 @@
 - `example/` - 主要邏輯(todo : 改掉這個資料夾名稱)。
 - `ocr/` - ocr模型套件 用來解海大圖形辨識介面
 ## 快速開始
-下載[nodejs](https://nodejs.org/en/download/)
+### 1. 下載[nodejs](https://nodejs.org/en/download/)
 
-啟動tronclass.bat
+### 2. clone下來，如果不會用git的話以下是教學
+    1. 新增一個資料夾
+    2. 開啟資料夾
+    3. 裝git(如果你沒有的話)[git下載連結](https://git-scm.com/install/windows)
+    4. 對資料夾右鍵點選`在終端開啟`
+    5. 輸入以下指令
+```bash
+git init
+git clone https://github.com/Bar-a-killer/tronclass
+```
+>等待安裝完成後就可以看到資料夾中多了許多檔案
 
-填入你的帳號密碼
-tronclass網址
-自動掃描頻率(推薦10000-15000)
-程式啟動時間(24時制所以大概是早八到十七點)
-程式自動啟動的刷新時間(推薦15-60)
-webhook
-(webhook部分可以參考[webhook教學](https://ninglab.com/Discord-Webhook-bot/))
+### 3. 啟動tronclass.bat
 
-按下儲存
+### 4. 填入資訊
+    1. 你的帳號密碼
+    2. tronclass網址
+    3. 自動掃描頻率(推薦10000-15000)
+    4. 程式啟動時間(24時制所以大概是早八到十七點)
+    5. 程式自動啟動的刷新時間(推薦15-60)
+    6. webhook
+(webhook部分可以參考[webhook教學](https://ninglab.com/Discord-Webhook-bot/)
 
-start:開始程序
-list:檢查執行中的程序
-stop:停止程序
-delete:刪除程序
+### 5. 按下儲存
+### 6.按下啟動
+
+## 按鈕說明
+* start:開始程序
+* list:檢查執行中的程序
+* stop:停止程序
+* delete:刪除程序
 
 打開package.json可以發現我其實也有包一些不常用的東西，熟悉terminal可以使用
 ## 使用說明
