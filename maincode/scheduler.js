@@ -50,7 +50,7 @@ function checkTimeAndControl() {
 function startTronclass() {
   console.log(`[${new Date().toLocaleTimeString()}] 🟢 Starting ${TARGET}`);
   discordNotify(`[${new Date().toLocaleTimeString()}] 🟢 Starting ${TARGET}`);
-  exec(`pm2 start example/example.js --name ${TARGET}`);
+  exec(`pm2 start maincode/main.js --name ${TARGET}`);
 }
 
 function stopTronclass() {
