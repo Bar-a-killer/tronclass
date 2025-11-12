@@ -5,7 +5,6 @@
 點名機2號，大部分邏輯來自slivecow002，登入邏輯來自阿龍。
 > 腳本來源 [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script),[@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
 
->Ocr模型來源 [AutoVerefy](https://chromewebstore.google.com/detail/autoverify/jgcfgcdociopaedpeiacalnccfiaeeej?hl=zh-TW)
 ## 主要功能
 
 - 在規定時間中定時掃描是否點名
