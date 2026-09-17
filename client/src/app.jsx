@@ -3,7 +3,7 @@ import { LogOut, Play, List, Trash2, Zap, Clock, Info, User, Settings, Globe, Co
 
 // --- API 服務設定 ---
 // ⚠️ 如果您在本地運行，請確保這個 URL 與您的 server.js 監聽的位址一致
-const API_BASE_URL = 'http://localhost:3000'; 
+const API_BASE_URL = `http://${window.location.hostname}:3000`;
 // --- 全域變數定義 ---
 const appId = 'local-app'; 
 

@@ -7,7 +7,7 @@ import fs from 'fs/promises';
 import YAML from 'yaml';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = 'http://localhost:5173';
 
 // --- 修正後的檔案路徑設定 ---
@@ -100,4 +100,4 @@ app.listen(PORT, () => {
             if (err) console.log(`請手動開啟瀏覽器至: ${FRONTEND_URL}`);
         });
     }
-});
+});
