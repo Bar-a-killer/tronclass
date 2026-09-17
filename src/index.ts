@@ -66,8 +66,13 @@ class TronClass {
         const text = await response.text();
 
         const responseUrl = response.url;
-        // cas baseurl
-        const casBaseUrl = responseUrl.split(".tw/")[0] + ".tw";
+        // 安全取得 cas baseurl
+        let casBaseUrl: string;
+        try {
+          casBaseUrl = new URL(responseUrl).origin;
+        } catch {
+          casBaseUrl = responseUrl.split(".tw/")[0] + ".tw";
+        }
 
         const dom = new JSDOM(text);
         // 使用可選鏈操作符 `?.` 安全地獲取值，並檢查其是否存在
@@ -93,10 +98,14 @@ class TronClass {
 
         // Check if captcha code is valid (4 digits)
         if (!/^\d{4}$/.test(captchaCode)) {
-          console.error("Invalid captcha code. Must be 4 digits.");
+          console.warn(`[Login] Attempt ${attempt + 1}: Invalid captcha code "${captchaCode}". Retrying...`);
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 1000));
+            continue;
+          }
           return {
             success: false,
-            message: "Invalid captcha code. Must be 4 digits.",
+            message: `Invalid captcha code ("${captchaCode}"). Max retries reached.`,
           };
         }
 
@@ -130,11 +139,16 @@ class TronClass {
         );
 
         const loginText = await loginResponse.text();
-        // 判斷登入是否成功的邏輯：如果響應包含 "forget-password" 字串，則認為登入失敗
+        // 判斷登入是否成功的邏輯：如果響應包含 "forget-password" 字串，則表示登入未成功 (可能是驗證碼或密碼錯誤)
         if (loginText.includes("forget-password")) {
+          console.warn(`[Login] Attempt ${attempt + 1}: Login failed (wrong credentials or captcha). Retrying...`);
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 1000));
+            continue;
+          }
           return {
             success: false,
-            message: "Invalid username or password.",
+            message: "Invalid username, password, or captcha after 3 attempts.",
           };
         }
 
@@ -144,40 +158,21 @@ class TronClass {
       } catch (e) {
         console.error(e);
         const errorMessage = e instanceof Error ? e.message : String(e);
-        if (e) {
-          // 處理登入憑證無效的錯誤
-          if (attempt < 2) {
-            console.warn(
-              `Login attempt ${
-                attempt + 1
-              } failed for ${username}: ${errorMessage}. Retrying...`
-            );
-          } else {
-            console.error(
-              `Max retries reached! Login failed for ${username}: ${errorMessage}`
-            );
-            return {
-              success: false,
-              message: `Login failed after multiple attempts: ${errorMessage}`,
-            };
-          }
+        if (attempt < 2) {
+          console.warn(
+            `Login attempt ${
+              attempt + 1
+            } failed for ${username}: ${errorMessage}. Retrying...`
+          );
+          await new Promise((r) => setTimeout(r, 1000));
         } else {
-          // 處理其他類型的錯誤（例如網路錯誤、JSDOM 解析錯誤等）
-          if (attempt < 2) {
-            console.error(
-              `Login attempt ${
-                attempt + 1
-              } encountered an error for ${username}: ${errorMessage}. Retrying...`
-            );
-          } else {
-            console.error(
-              `Max retries reached! Login failed for ${username} due to an unexpected error: ${errorMessage}`
-            );
-            return {
-              success: false,
-              message: `Login failed after multiple attempts due to unexpected error: ${errorMessage}`,
-            };
-          }
+          console.error(
+            `Max retries reached! Login failed for ${username}: ${errorMessage}`
+          );
+          return {
+            success: false,
+            message: `Login failed after multiple attempts: ${errorMessage}`,
+          };
         }
       }
     }
@@ -207,27 +202,11 @@ class TronClass {
       );
     }
 
-    // 檢查是否已登入。如果未登入且已儲存憑證，則嘗試自動重新驗證。
+    // 檢查是否已登入
     if (!this.loggedIn) {
-      if (this.username && this.password) {
-      //   console.warn(
-      //     "Session not active or expired. Attempting to re-authenticate automatically..."
-      //   );
-      //   // TODO: 這裡的 ocr 函數需要從外部傳入，或者有一個預設的處理方式
-      //   // 目前暫時使用一個簡單的同步函數來避免錯誤
-      //   // 這裡應該改成更合適的方式來處理 OCR
-      //   const loginResult = await this.login(this.username, this.password, async ()=>{return "0000";});
-      //   if (!loginResult.success) {
-      //     throw new Error(
-      //       `Automatic re-authentication failed: ${loginResult.message}. Please log in manually.`
-      //     );
-      //   }
-      //   console.log("Automatic re-authentication successful.");
-      // } else {
-        throw new Error(
-          "Not logged in and no credentials saved for re-authentication. Please call the login method first."
-        );
-      }
+      throw new Error(
+        "Not logged in. Please call the login method first."
+      );
     }
 
     const fullUrl = `${this.baseUrl}${
