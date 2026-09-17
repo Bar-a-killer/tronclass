@@ -1,61 +1,124 @@
 [English](./README.md) | 中文
-# 這個項目的大部分code都是抄來的超級奇美拉，尋找原項目還請洽rlongdragon
-# tronclass API
 
-點名機2號，大部分邏輯來自slivecow002，登入邏輯來自阿龍。
-> 腳本來源 [@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script),[@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
+# TronClass API
 
-## 主要功能
+點名機二號。核心登入與破解邏輯改寫自 silvercow002 與 rlongdragon 的專案，感謝原作者提供的基礎。
 
-- 在規定時間中定時掃描是否點名
-- 自動破解數字點名
-- Discord回報進度
+> 腳本來源：[@silvercow002/tronclass-script](https://github.com/silvercow002/tronclass-script)、[@rlongdragon/tronclass-api](https://github.com/rlongdragon/tronclass-api)
 
-## 目錄
+---
 
-- `src/` - TypeScript 原始碼。
-- `dist/` - 編譯後的 JavaScript（若已 build）。
-- `example/` - 主要邏輯(todo : 改掉這個資料夾名稱)。
-- `ocr/` - ocr模型套件 用來解海大圖形辨識介面
+## 功能特色
+
+- 在指定的時間區間內定時掃描並自動完成數字點名
+- 提供網頁介面（`client/`）管理設定與手動操作服務
+- 完成點名或發生錯誤時透過 Discord Webhook 回報進度
+
+---
+
+## 專案結構
+
+- `src/` - 核心登入與點名邏輯的 TypeScript 原始碼
+- `dist/` - 編譯後的 JavaScript（執行 `npm run build` 後產生）
+- `maincode/` - 主程式、排程器（`scheduler.js`）、通知模組與後端 API（`server.js`）
+- `maincode/yamls/` - 設定檔目錄，`config.yaml` 為實際使用的設定（已加入 `.gitignore`），`config_sample.yaml` 為範例
+- `client/` - 網頁管理介面原始碼（React + Vite）
+- `ocr/` - 用於破解海大 TronClass 登入頁 CAPTCHA 的 OCR 模型
+- `scripts/` - 輔助腳本（例如 `make help` 的說明文字）
+
+---
+
 ## 快速開始
-### 1. 下載[nodejs](https://nodejs.org/en/download/)
 
-### 2. clone下來，如果不會用git的話以下是教學
-    1. 新增一個資料夾
-    2. 開啟資料夾
-    3. 裝git(如果你沒有的話)[git下載連結](https://git-scm.com/install/windows)
-    4. 對資料夾右鍵點選`在終端開啟`
-    5. 輸入以下指令
+### 方法一：Windows 一鍵啟動（推薦給不熟悉指令列的使用者）
+
+1. 安裝 [Node.js](https://nodejs.org/en/download/)
+2. 下載或 clone 本專案
+3. 雙擊執行根目錄的 `tronclass.bat`
+
+`tronclass.bat` 會自動：安裝根目錄與 `client/` 的相依套件、編譯後端 TypeScript、啟動後端 API 與前端開發伺服器，並自動開啟瀏覽器進入網頁介面。關閉對應的命令視窗即可停止服務。
+
+### 方法二：手動啟動（macOS / Linux，或想用指令列的 Windows 使用者）
+
+有安裝 `make` 的情況下：
+
 ```bash
-git init
-git clone https://github.com/Bar-a-killer/tronclass
+make install     # 安裝根目錄與 client 的所有依賴
+make build       # 編譯 TypeScript 並打包前端
 ```
->等待安裝完成後就可以看到資料夾中多了許多檔案
 
-### 3. 啟動tronclass.bat
+接著複製設定檔範本並填入你的帳號資訊：
 
-### 4. 填入資訊
-    1. 你的帳號密碼
-    2. tronclass網址
-    3. 自動掃描頻率(推薦10000-15000)
-    4. 程式啟動時間(24時制所以大概是早八到十七點)
-    5. 程式自動啟動的刷新時間(推薦15-60)
-    6. webhook
-(webhook部分可以參考[webhook教學](https://ninglab.com/Discord-Webhook-bot/)
+```bash
+cp maincode/yamls/config_sample.yaml maincode/yamls/config.yaml
+```
 
-### 5. 按下儲存
-### 6.按下啟動
+沒有 `make` 也完全沒問題，用等效的 npm 指令即可：
 
-## 按鈕說明
-* start:開始程序
-* list:檢查執行中的程序
-* stop:停止程序
-* delete:刪除程序
+```bash
+npm install
+cd client && npm install && cd ..
+npm run build
+npm run build:ui
+```
 
-打開package.json可以發現我其實也有包一些不常用的東西，熟悉terminal可以使用
-## 使用說明
-因海大的 tronclass 在 2025/10/13 登入畫面加入了 reCAPTCHA，故更新 OCR 辨識文字功能。
-如果你不需要 OCR ，可以參考此前版本 index.ts 的 login 函數。
-而且我把登入邏輯隔離開了，所以理論上你可以把阿龍的舊版本替換掉index.ts來實現。
+### 啟動服務
 
-# 警告:雖然此機器是開源的，過多人同時使用依然可能導致服務塞住。圖資處更新登入介面後可能將無法破解，能上課還是盡量去上課，這玩意偶爾早八用就好。不然可以考慮休學。
+| 情境 | 指令 |
+| --- | --- |
+| 只啟動後端 API | `make server`（等效 `npm run server`） |
+| 只啟動前端開發伺服器 | `make ui`（等效 `npm run ui`） |
+| 同時啟動前後端，並開放區網存取（適合用手機測試） | `make lan`（等效 `npm run lan`） |
+| 透過 PM2 在背景常駐執行點名主程式與排程器 | `make start` |
+
+啟動後端後打開瀏覽器進入網頁介面，即可在其中管理設定與手動觸發點名腳本。
+
+---
+
+## 設定檔說明（`maincode/yamls/config.yaml`）
+
+```yaml
+tron:
+  TRON_USER: "你的帳號"
+  TRON_PASS: "你的密碼"
+  TRON_BASE_URL: "https://tronclass.ntou.edu.tw"
+  TRON_INTERVAL: 5000        # 自動掃描頻率（毫秒），建議 10000-15000
+scheduler:
+  START_HOUR: 5              # 排程器開始運作的時間（24 小時制）
+  STOP_HOUR: 18              # 排程器停止運作的時間
+  CHECK_INTERVAL: 15         # 排程檢查間隔（分鐘）
+webhook:
+  webhook_url: "你的 Discord webhook 網址"
+server:
+  PORT: 3000                 # 後端 API 監聽的 port，可依需要修改
+```
+
+Webhook 設定方式可參考 [Discord Webhook 教學](https://ninglab.com/Discord-Webhook-bot/)。
+
+也可以直接透過網頁介面的設定頁編輯並儲存這份設定檔，不需手動編輯 YAML。
+
+### 修改後端 port
+
+直接修改 `config.yaml` 中 `server.PORT` 的值並重新啟動後端即可。前端已改為以相對路徑呼叫 API，並在正式部署時由後端同源提供靜態網頁，因此變更 port 後不需要另外調整前端設定；開發模式（`vite dev`）會在啟動時讀取同一份設定檔決定 API 代理目標。
+
+---
+
+## 在區網內測試（例如用手機開啟網頁介面）
+
+```bash
+make lan
+```
+
+此指令會同時啟動後端與前端（前端會開放給區網內其他裝置存取），並在終端機印出可供其他裝置連線的網址（`Network: http://<你的區網IP>:5173/`）。按下 `Ctrl+C` 即可同時關閉兩個服務。
+
+正式部署（`make build` 後以 `make server` 啟動）時，其他裝置直接連線 `http://<你的區網IP>:<PORT>/` 即可，不需要額外啟動前端開發伺服器。
+
+---
+
+## 使用須知
+
+海大 TronClass 於 2025/10/13 在登入畫面加入 reCAPTCHA，因此本專案加入了 OCR 辨識功能以繞過驗證。若不需要 OCR，可參考舊版 `index.ts` 的 `login` 函式；登入邏輯已模組化，理論上可替換為其他實作。
+
+## 警告
+
+本專案雖為開源專案，但若同時有過多使用者透過相同方式登入，仍可能造成校方系統負載增加，甚至導致登入介面調整後功能失效。請在合理範圍內使用（例如偶爾早八點名），不建議作為長期取代到課的手段。
