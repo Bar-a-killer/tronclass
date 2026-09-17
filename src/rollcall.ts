@@ -11,6 +11,10 @@ import ProgressBar from "progress";
 class Rollcall {
   private tronclass: Tronclass;
   private PATH = "./logs"; // 預設 log 目錄
+  private notifiedRollcalls: Set<number> = new Set();
+  private failedRollcalls: Set<number> = new Set();
+  private succeededRollcalls: Set<number> = new Set();
+
   constructor(tron: Tronclass) {
     this.tronclass = tron;
   }
@@ -41,10 +45,6 @@ class Rollcall {
   }
 
 
-  /**
-   * 數字點名處理函式
-   * 僅嘗試直接從 Payload 解析代碼，若無代碼或簽到失敗則直接發送 Webhook 通知
-   */
   /**
    * 數字點名處理函式
    * 流程：
@@ -131,30 +131,40 @@ class Rollcall {
         const isSuccess = resp.status >= 200 && resp.status < 300;
 
         if (isSuccess) {
-          discordNotify(`🎯 點名成功！代碼: **${code}** (Rollcall ID: ${rcid})`);
+          this.succeededRollcalls.add(rcid);
+          await discordNotify(`🎯 點名成功！代碼: **${code}** (Rollcall ID: ${rcid})`).catch(console.error);
           return code;
         }
 
-        discordNotify(
-          `❌ 點名失敗！已取得代碼 **${code}** 但提交遭到伺服器拒絕 (HTTP ${resp.status}) (Rollcall ID: ${rcid})`
-        );
+        if (!this.failedRollcalls.has(rcid)) {
+          this.failedRollcalls.add(rcid);
+          await discordNotify(
+            `❌ 點名失敗！已取得代碼 **${code}** 但提交遭到伺服器拒絕 (HTTP ${resp.status}) (Rollcall ID: ${rcid})`
+          ).catch(console.error);
+        }
         return "-1";
       } catch (e: any) {
-        discordNotify(
-          `⚠️ 提交代碼發生例外錯誤 (Code: ${code}, ID: ${rcid}): ${e?.message || String(e)}`
-        );
+        if (!this.failedRollcalls.has(rcid)) {
+          this.failedRollcalls.add(rcid);
+          await discordNotify(
+            `⚠️ 提交代碼發生例外錯誤 (Code: ${code}, ID: ${rcid}): ${e?.message || String(e)}`
+          ).catch(console.error);
+        }
         await log({ code, error: e?.message || String(e), note: "submit_exception" });
         return "-1";
       }
     }
 
     // -------------------------------------------------------------
-    // 步驟 4: 未能取得代碼 -> 砍掉爆破，直接 Webhook 報警
+    // 步驟 4: 未能取得代碼 -> 砍掉爆破，直接 Webhook 報警 (僅通知一次)
     // -------------------------------------------------------------
     console.log(`❌ [Rollcall ${rcid}] No valid number_code in detail payload.`);
-    discordNotify(
-      `❌ **數字點名失敗**：無法從系統取得點名碼，且已停用暴力破解 (Rollcall ID: ${rcid})`
-    );
+    if (!this.failedRollcalls.has(rcid)) {
+      this.failedRollcalls.add(rcid);
+      await discordNotify(
+        `❌ **數字點名失敗**：無法從系統取得點名碼，且已停用暴力破解 (Rollcall ID: ${rcid})`
+      ).catch(console.error);
+    }
 
     await log({
       summary: true,
@@ -231,26 +241,56 @@ class Rollcall {
       cnt
     );
 
-    let status;
+    let status = -1;
 
-    if (json.rollcalls && json.rollcalls.length > 0) {
-      const rollcall = json.rollcalls[0];
+    if (json && Array.isArray(json.rollcalls) && json.rollcalls.length > 0) {
+      // 維護現存點名集合，移除已結束的過期狀態
+      const currentIds = new Set<number>(json.rollcalls.map((r: any) => r.rollcall_id));
+      for (const id of this.notifiedRollcalls) {
+        if (!currentIds.has(id)) this.notifiedRollcalls.delete(id);
+      }
+      for (const id of this.failedRollcalls) {
+        if (!currentIds.has(id)) this.failedRollcalls.delete(id);
+      }
 
-      if (rollcall.status === "on_call_fine") {
-        console.log("rollcalled");
-        status = 0;
-      } else if (rollcall.is_number) {
-        console.log("start num");
+      // 支援並行多門課程點名檢查
+      for (const rollcall of json.rollcalls) {
         const id = rollcall.rollcall_id;
-        discordNotify(`🔔 偵測到數字點名 (ID: ${id})，正在嘗試抓取代碼簽到...`);
-        await this.number(id);
-        status = 1;
-      } else if (rollcall.is_radar) {
-        console.log("start loc");
-        status = 2;
-      } else {
-        console.log("maybe qrcode");
-        status = 3;
+
+        if (rollcall.status === "on_call_fine") {
+          console.log(`[Rollcall ${id}] Checked in (on_call_fine)`);
+          this.succeededRollcalls.add(id);
+          status = 0;
+        } else if (this.succeededRollcalls.has(id)) {
+          // 本地已確認簽到成功
+          status = 0;
+        } else if (rollcall.is_number) {
+          if (this.failedRollcalls.has(id)) {
+            // 已失敗過，不再每輪重複嘗試和洗版
+            continue;
+          }
+          console.log(`[Rollcall ${id}] Start number rollcall`);
+          if (!this.notifiedRollcalls.has(id)) {
+            this.notifiedRollcalls.add(id);
+            await discordNotify(`🔔 偵測到數字點名 (ID: ${id})，正在嘗試抓取代碼簽到...`).catch(console.error);
+          }
+          await this.number(id);
+          status = 1;
+        } else if (rollcall.is_radar) {
+          console.log(`[Rollcall ${id}] Radar rollcall detected`);
+          if (!this.notifiedRollcalls.has(id)) {
+            this.notifiedRollcalls.add(id);
+            await discordNotify(`📡 偵測到定位/雷達點名 (ID: ${id})，此模式需手動完成定位。`).catch(console.error);
+          }
+          status = 2;
+        } else {
+          console.log(`[Rollcall ${id}] QR code or other rollcall detected`);
+          if (!this.notifiedRollcalls.has(id)) {
+            this.notifiedRollcalls.add(id);
+            await discordNotify(`📷 偵測到 QR Code 或其他點名 (ID: ${id})，需手動簽到。`).catch(console.error);
+          }
+          status = 3;
+        }
       }
     } else {
       console.log("not call");
@@ -260,4 +300,4 @@ class Rollcall {
     return status;
   }
 }
-export default Rollcall;
+export default Rollcall;

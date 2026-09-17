@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -7,6 +8,7 @@ import YAML from 'yaml';
 
 const app = express();
 const PORT = 3000;
+const FRONTEND_URL = 'http://localhost:5173';
 
 // --- 修正後的檔案路徑設定 ---
 const __filename = fileURLToPath(import.meta.url);
@@ -16,12 +18,8 @@ const __dirname = dirname(__filename);
 const CONFIG_FILE_PATH = join(__dirname, 'yamls', 'config.yaml'); 
 
 app.use(express.json());
-// 允許跨域請求 (CORS) 
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); 
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
-});
+// 允許跨域請求 (CORS)
+app.use(cors());
 
 console.log(`設定檔預期路徑: ${CONFIG_FILE_PATH}`);
 
@@ -38,9 +36,9 @@ app.get('/api/get-config', async (req, res) => {
             console.warn("Config file not found. Returning default.");
             // 如果找不到檔案，返回預設結構
             return res.json({ status: 'success', data: {
-                tron: { TRON_USER: '', TRON_PASS: '', TRON_BASE_URL: 'http://default.url', TRON_INTERVAL: 5000 },
-                scheduler: { START_HOUR: 5, STOP_HOUR: 18, CHECK_INTERVAL: 15 },
-                webhook: ''
+                tron: { TRON_USER: '', TRON_PASS: '', TRON_BASE_URL: 'https://tronclass.ntou.edu.tw', TRON_INTERVAL: 5000 },
+                scheduler: { START_HOUR: 6, STOP_HOUR: 18, CHECK_INTERVAL: 15 },
+                webhook: { webhook_url: '' }
             }});
         }
         console.error('Error reading config:', error);
@@ -67,6 +65,9 @@ app.post('/api/save-config', async (req, res) => {
     }
 });
 
+// 白名單限制允許執行的 NPM 腳本
+const ALLOWED_SCRIPTS = new Set(['start', 'stop', 'delete', 'list', 'logs', 'reload']);
+
 /**
  * 執行 NPM 腳本 (pm2 命令)
  */
@@ -76,23 +77,27 @@ app.post('/api/run-script', (req, res) => {
         return res.status(400).json({ status: 'error', output: '缺少腳本名稱' });
     }
     
-    // 為了安全，在實際環境中應限制可執行的腳本
+    // 安全檢查：嚴格限制允許執行的腳本名稱
+    if (!ALLOWED_SCRIPTS.has(scriptName)) {
+        return res.status(403).json({ status: 'error', output: `未授權執行的腳本名稱: ${scriptName}` });
+    }
+    
     const command = `npm run ${scriptName}`;
     
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error(`執行錯誤: ${error}`);
-            // 注意：將 stderr 作為 output 傳回前端
-            return res.json({ status: 'error', output: stderr }); 
+            return res.json({ status: 'error', output: stderr || error.message }); 
         }
-        // 將 stdout 作為 output 傳回前端
         res.json({ status: 'success', output: stdout });
     });
 });
 
 app.listen(PORT, () => {
     console.log(`後端服務運行於 http://localhost:${PORT}`);
-    exec(`npm run ui`, (err) => {
-        if (err) console.log(`請手動開啟瀏覽器至: ${url}`);
-    });
-});
+    if (process.env.AUTO_START_UI === 'true') {
+        exec(`npm run ui`, (err) => {
+            if (err) console.log(`請手動開啟瀏覽器至: ${FRONTEND_URL}`);
+        });
+    }
+});

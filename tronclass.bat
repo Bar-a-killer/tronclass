@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 SETLOCAL
 
 REM --- Configuration ---
@@ -13,24 +14,33 @@ echo ===========================================
 echo.
 
 REM --- Step 1: Install Dependencies (Synchronous) ---
-echo [1/4] Checking dependencies... This may take a moment.
-call npm install
-if errorlevel 1 (
-echo.
-echo ERROR: npm install failed in root directory. Please check logs.
-goto :end
+if not exist "node_modules\" (
+    echo [1/4] Installing root dependencies... This may take a moment.
+    call npm install
+    if errorlevel 1 (
+        echo.
+        echo ERROR: npm install failed in root directory. Please check logs.
+        goto :end
+    )
+) else (
+    echo [1/4] Root dependencies found. Skipping npm install.
 )
 
-echo.
-echo [2/4] Installing client dependencies...
-cd client
-call npm install
-if errorlevel 1 (
-echo.
-echo ERROR: npm install failed in client directory. Please check logs.
-goto :end
+if not exist "client\node_modules\" (
+    echo.
+    echo [2/4] Installing client dependencies...
+    cd client
+    call npm install
+    if errorlevel 1 (
+        echo.
+        echo ERROR: npm install failed in client directory. Please check logs.
+        cd ..
+        goto :end
+    )
+    cd ..
+) else (
+    echo [2/4] Client dependencies found. Skipping client npm install.
 )
-cd ..
 REM --- Step 2: Compile Main Application Code ---
 echo.
 echo [3/4] Compiling main application code (npm run build)...

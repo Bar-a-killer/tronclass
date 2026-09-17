@@ -24,54 +24,69 @@ if (!password)
 if (!baseUrl)
   throw new Error("Please set the TRON_BASE_URL environment variable.");
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function main() {
   const tronclass = new Tronclass();
   tronclass.setBaseUrl(baseUrl);
-  var n = 3;
-  while (n-- > 0) {
-    await tronclass.login(username, password, captcha).then((loginResult) => {
+
+  async function performLogin() {
+    for (let i = 0; i < 3; i++) {
+      const loginResult = await tronclass.login(username, password, captcha);
       if (loginResult.success) {
         console.log("Login succeeded:", loginResult.message);
-        discordNotify(username + " Login succeeded: " + loginResult.message);
-      } else {
-        console.error("Login failed:", loginResult.message);
-        discordNotify(username + " Login failed: " + loginResult.message);
-        return;
+        await discordNotify(`${username} Login succeeded: ${loginResult.message}`).catch(console.error);
+        return true;
       }
-    });
-    if (tronclass.IsloggedIn()) break;
-    console.log("Retrying login...");
-    discordNotify(username + " Retrying login...");
+      console.error(`Login attempt ${i + 1} failed:`, loginResult.message);
+      await discordNotify(`${username} Login attempt ${i + 1} failed: ${loginResult.message}`).catch(console.error);
+      if (i < 2) {
+        console.log("Retrying login in 3 seconds...");
+        await sleep(3000);
+      }
+    }
+    return false;
   }
-  if (!tronclass.IsloggedIn()) {
+
+  const loginOk = await performLogin();
+  if (!loginOk || !tronclass.IsloggedIn()) {
     console.error("Failed to log in after multiple attempts. Exiting.");
-    discordNotify(
-      username + " Failed to log in after multiple attempts. Exiting."
-    );
+    await discordNotify(`${username} Failed to log in after multiple attempts. Exiting.`).catch(console.error);
     return;
   }
-  const rollcall = new Rollcall(tronclass);
-  //await rollcall.number(-1);
-  // await tronclass.recentlyVisitedCourses().then((data) => {
-  //   console.log("Recently visited courses:", data);
-  // });
 
-  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const rollcall = new Rollcall(tronclass);
 
   (async function poll() {
-    var cnt = 0;
+    let cnt = 0;
+    let consecutiveErrors = 0;
     for (;;) {
       try {
         await rollcall.checkRollcall(cnt++);
+        consecutiveErrors = 0;
         console.log("Finished checking roll calls.");
       } catch (err) {
+        consecutiveErrors++;
         console.error("Error checking roll calls:", err);
-        discordNotify(username + " Error checking roll calls: " + err);
+        // 連續發生 2 次以上錯誤（通常是 Cookie / Session 過期），嘗試重新登入恢復
+        if (consecutiveErrors >= 2) {
+          console.warn("⚠️ 偵測到連線異常（可能 Session 已過期），嘗試自動重新登入...");
+          await discordNotify(`${username} 偵測到連線異常，正在嘗試重新登入...`).catch(console.error);
+          const ok = await performLogin();
+          if (ok) {
+            consecutiveErrors = 0;
+            console.log("自動重新登入成功！繼續巡檢點名。");
+          } else {
+            console.error("自動重新登入失敗，等待下一輪重試。");
+          }
+        } else {
+          await discordNotify(`${username} Error checking roll calls: ${err?.message || err}`).catch(console.error);
+        }
       }
-      await sleep(intervalMs);
+      await sleep(intervalMs || 5000);
     }
   })();
-
 }
 
 main();
+

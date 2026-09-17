@@ -9,15 +9,19 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// === 讀取 config.yaml ===
-let WEBHOOK_URL = "";
-try {
-  const yamlPath = path.resolve(__dirname, "yamls/config.yaml");
-  const config = YAML.parse(fs.readFileSync(yamlPath, "utf8"));
-  WEBHOOK_URL = config.webhook.webhook_url || "";
-  if (!WEBHOOK_URL) console.warn("⚠️ config.yaml 找不到 webhook 欄位。");
-} catch (err) {
-  console.warn("⚠️ 無法讀取 config.yaml：", err.message);
+/**
+ * 動態取得最新的 Webhook URL
+ */
+function getWebhookUrl() {
+  try {
+    const yamlPath = path.resolve(__dirname, "yamls/config.yaml");
+    if (!fs.existsSync(yamlPath)) return "";
+    const config = YAML.parse(fs.readFileSync(yamlPath, "utf8"));
+    return config?.webhook?.webhook_url || "";
+  } catch (err) {
+    console.warn("⚠️ 無法讀取 config.yaml 中的 webhook：", err.message);
+    return "";
+  }
 }
 
 /**
@@ -26,32 +30,52 @@ try {
  * @param {object} [options] - 額外選項
  */
 export async function discordNotify(content, options = {}) {
-  if (!WEBHOOK_URL) throw new Error("未設定 webhook URL。請在 config.yaml 中設定。");
+  const webhookUrl = getWebhookUrl();
+  if (!webhookUrl) {
+    console.warn("⚠️ 未設定 webhook URL，跳過 Discord 通知。");
+    return { status: 0, body: "Webhook URL not configured" };
+  }
 
   const { username = "Tronclass Bot 🤖", embeds = [] } = options;
   const data = JSON.stringify({ content, username, embeds });
 
-  const url = new URL(WEBHOOK_URL);
+  try {
+    const url = new URL(webhookUrl);
+    const reqOptions = {
+      hostname: url.hostname,
+      path: url.pathname + url.search,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(data),
+      },
+    };
 
-  const reqOptions = {
-    hostname: url.hostname,
-    path: url.pathname + url.search,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(data),
-    },
-  };
+    return await new Promise((resolve) => {
+      const req = https.request(reqOptions, (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ status: res.statusCode, body });
+          } else {
+            console.warn(`⚠️ Discord Webhook 回應狀態碼: ${res.statusCode}，內容: ${body}`);
+            resolve({ status: res.statusCode, body });
+          }
+        });
+      });
 
-  return new Promise((resolve, reject) => {
-    const req = https.request(reqOptions, (res) => {
-      let body = "";
-      res.on("data", (chunk) => (body += chunk));
-      res.on("end", () => resolve({ status: res.statusCode, body }));
+      req.on("error", (err) => {
+        console.error("⚠️ Discord Webhook 請求發生網路錯誤:", err.message);
+        resolve({ status: -1, error: err.message });
+      });
+
+      req.write(data);
+      req.end();
     });
-
-    req.on("error", reject);
-    req.write(data);
-    req.end();
-  });
+  } catch (err) {
+    console.error("⚠️ Discord Webhook 處理失敗:", err.message);
+    return { status: -1, error: err.message };
+  }
 }
+
