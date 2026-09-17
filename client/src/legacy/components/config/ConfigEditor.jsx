@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Bell, CalendarClock, Eye, EyeOff, Loader2, RotateCcw, Save, Settings2, UserRound, WifiOff } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Bell, CalendarClock, Code2, Eye, EyeOff, Loader2, RotateCcw, Save, Settings2, UserRound, WifiOff } from 'lucide-react';
 import Card from '../Card.jsx';
 import Field from './Field.jsx';
 import ScheduleBar from './ScheduleBar.jsx';
+import { toPayload } from '../../utils/config.js';
+import { toYamlString } from '../../utils/yaml.js';
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => String(h));
 
@@ -45,7 +47,7 @@ function Placeholder({ status, onRetry }) {
     return (
       <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
         <WifiOff className="h-8 w-8 text-slate-600" />
-        <p className="text-sm text-slate-400">無法從後端讀取設定</p>
+        <p className="text-sm text-slate-400">無法從後端讀取 config.yaml</p>
         <button
           type="button"
           onClick={onRetry}
@@ -65,8 +67,9 @@ function Placeholder({ status, onRetry }) {
 }
 
 export default function ConfigEditor({ config }) {
-  const { status, draft, errors, dirty, saving, canSave, hasPassword, setField, reset, save, reload } = config;
+  const { status, draft, errors, dirty, saving, canSave, setField, reset, save, reload } = config;
   const [showPassword, setShowPassword] = useState(false);
+  const [showYaml, setShowYaml] = useState(false);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -89,6 +92,13 @@ export default function ConfigEditor({ config }) {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [dirty]);
 
+  const yamlPreview = useMemo(() => {
+    if (!draft) return '';
+    const payload = toPayload(draft, '');
+    payload.tron.TRON_PASS = draft.tron.TRON_PASS ? '•••••• (新密碼)' : '(沿用原密碼)';
+    return toYamlString(payload);
+  }, [draft]);
+
   const bind = (section, key) => ({
     id: key,
     value: draft[section][key],
@@ -103,7 +113,7 @@ export default function ConfigEditor({ config }) {
 
   return (
     <Card
-      title="我的設定"
+      title="設定檔"
       icon={Settings2}
       className="flex flex-col"
       actions={
@@ -126,8 +136,8 @@ export default function ConfigEditor({ config }) {
                   label="密碼"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  placeholder={hasPassword ? '留空則沿用目前密碼' : 'Tronclass 密碼'}
-                  hint={draft.tron.TRON_PASS && hasPassword ? '儲存後將更換密碼' : undefined}
+                  placeholder="留空則沿用目前密碼"
+                  hint={draft.tron.TRON_PASS ? '儲存後將更換密碼' : undefined}
                   trailing={
                     <button
                       type="button"
@@ -148,7 +158,7 @@ export default function ConfigEditor({ config }) {
             </Section>
 
             <Section icon={CalendarClock} title="運行時段">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <HourSelect
                   id="START_HOUR"
                   label="開始"
@@ -162,6 +172,7 @@ export default function ConfigEditor({ config }) {
                   error={errors.STOP_HOUR}
                   onChange={(v) => setField('scheduler', 'STOP_HOUR', v)}
                 />
+                <Field label="檢查間隔" type="number" min="1" inputMode="numeric" suffix="分" {...bind('scheduler', 'CHECK_INTERVAL')} />
               </div>
               <ScheduleBar start={Number(draft.scheduler.START_HOUR)} stop={Number(draft.scheduler.STOP_HOUR)} />
             </Section>
@@ -175,8 +186,24 @@ export default function ConfigEditor({ config }) {
                 {...bind('webhook', 'webhook_url')}
               />
             </Section>
-          </div>
 
+            <div className="px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setShowYaml((v) => !v)}
+                aria-expanded={showYaml}
+                className="flex items-center gap-2 text-xs font-medium text-slate-500 transition hover:text-slate-300"
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                {showYaml ? '隱藏' : '預覽'}將寫入的 YAML
+              </button>
+              {showYaml && (
+                <pre className="mt-3 overflow-x-auto rounded-lg bg-slate-950/80 p-4 font-mono text-xs leading-relaxed text-slate-300">
+                  {yamlPreview}
+                </pre>
+              )}
+            </div>
+          </div>
 
           <div className="sticky bottom-0 mt-auto flex items-center justify-between gap-3 rounded-b-2xl border-t border-slate-800 bg-slate-900/95 px-5 py-3 backdrop-blur">
             <p className="hidden text-xs text-slate-500 sm:block">

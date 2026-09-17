@@ -11,3 +11,5 @@ webhook:
   webhook_url: 'https://discordapp.com/api/webhooks/1111111111/AAAA'
 server:
   PORT: 3000
+  # single = 單人自架 (預設，不需登入)；multi = 多人登入 + 管理後台
+  MODE: single

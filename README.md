@@ -92,6 +92,7 @@ webhook:
   webhook_url: "your-discord-webhook-url"
 server:
   PORT: 3000                 # port the backend API listens on
+  MODE: single               # single = self-hosted, no login (default); multi = multi-user login
 ```
 
 See this [Discord webhook guide](https://ninglab.com/Discord-Webhook-bot/) if you need help setting one up.
@@ -101,6 +102,26 @@ You can also edit and save this file directly from the web UI's settings page in
 ### Changing the backend port
 
 Edit `server.PORT` in `config.yaml` and restart the backend. The frontend calls the API using relative paths and, in production, is served by the same backend process (same origin), so no frontend changes are needed. In dev mode, `vite` reads the same config file at startup to decide where to proxy `/api` requests.
+
+---
+
+## 👥 Multi-user mode (login + admin panel)
+
+The default `single` mode behaves exactly as before: no login, settings live in `config.yaml`, and `tronclass.bat`, `make start`, etc. keep working unchanged.
+
+To let several people share one server, set `server.MODE` to `multi` in `config.yaml` (or set the env var `TRONCLASS_MODE=multi`) and restart the backend:
+
+1. On first visit you'll be asked to create an **admin account**. Any Tronclass account, schedule and webhook already in `config.yaml` are imported into it.
+2. The admin adds other users from the **Admin** page (there is no public sign-up) and hands out the initial password; users can change it after logging in.
+3. Each user fills in their own Tronclass credentials, schedule and webhook on the dashboard, then clicks **Enable auto rollcall**.
+
+How it works:
+
+- Each user gets their own pm2 process `tc-<username>` (running `maincode/bot.js`), so users are isolated from each other.
+- The backend checks every user's schedule once a minute and starts/stops their process, so **the backend must stay running**. Use `npm run server:start` to run it under pm2 (`npm run server:stop` to stop it).
+- The admin panel shows each user's process status, last check, latest error and memory use, lets you view or clear each user's bot log, and has an audit log (logins, failed logins, config changes, start/stop, account management).
+- Accounts, per-user settings and logs are stored in `maincode/data/` (gitignored). **Tronclass passwords are stored in plain text**, same as `config.yaml` in single mode, so lock down access to the server itself.
+- Sessions use an HttpOnly cookie. 10 failed logins from the same IP or for the same account within 15 minutes trigger a temporary lockout. Behind a reverse proxy such as nginx, set `TRUST_PROXY=1` and serve over HTTPS.
 
 ---
 

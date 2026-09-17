@@ -25,6 +25,8 @@ tronclass-api-*
 config.yaml
 **/config.yaml
 *.local.yaml
+# 多人版的帳號、點名設定、登入金鑰與每位使用者的執行資料
+maincode/data/
 *.local.json
 .env
 .env.local

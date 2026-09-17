@@ -10,9 +10,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * 動態取得最新的 Webhook URL
+ * 單人模式：動態取得 config.yaml 中最新的 Webhook URL
  */
-function getWebhookUrl() {
+function getLegacyWebhookUrl() {
   try {
     const yamlPath = path.resolve(__dirname, "yamls/config.yaml");
     if (!fs.existsSync(yamlPath)) return "";
@@ -24,13 +24,37 @@ function getWebhookUrl() {
   }
 }
 
+// 預設沿用單人模式讀 config.yaml；多人模式的 bot.js 會呼叫 configureNotify 改用該使用者的 webhook，
+// 後端伺服器則直接呼叫 sendDiscord 並指定 webhook
+let resolveWebhookUrl = getLegacyWebhookUrl;
+let onNotify = () => {};
+
+export function configureNotify({ getWebhookUrl, onMessage } = {}) {
+  if (getWebhookUrl) resolveWebhookUrl = getWebhookUrl;
+  if (onMessage) onNotify = onMessage;
+}
+
 /**
- * 發送 Discord Webhook 訊息
+ * 發送 Discord Webhook 訊息到目前設定的使用者 webhook
  * @param {string} content - 訊息文字
  * @param {object} [options] - 額外選項
  */
 export async function discordNotify(content, options = {}) {
-  const webhookUrl = getWebhookUrl();
+  try {
+    onNotify(content);
+  } catch {
+    // 狀態紀錄失敗不影響通知
+  }
+  return sendDiscord(resolveWebhookUrl(), content, options);
+}
+
+/**
+ * 發送 Discord Webhook 訊息
+ * @param {string} webhookUrl - Webhook 網址，空值則略過
+ * @param {string} content - 訊息文字
+ * @param {object} [options] - 額外選項
+ */
+export async function sendDiscord(webhookUrl, content, options = {}) {
   if (!webhookUrl) {
     console.warn("⚠️ 未設定 webhook URL，跳過 Discord 通知。");
     return { status: 0, body: "Webhook URL not configured" };

@@ -91,6 +91,7 @@ webhook:
   webhook_url: "你的 Discord webhook 網址"
 server:
   PORT: 3000                 # 後端 API 監聽的 port，可依需要修改
+  MODE: single               # single = 單人自架（預設）；multi = 多人登入模式
 ```
 
 Webhook 設定方式可參考 [Discord Webhook 教學](https://ninglab.com/Discord-Webhook-bot/)。
@@ -100,6 +101,26 @@ Webhook 設定方式可參考 [Discord Webhook 教學](https://ninglab.com/Disco
 ### 修改後端 port
 
 直接修改 `config.yaml` 中 `server.PORT` 的值並重新啟動後端即可。前端已改為以相對路徑呼叫 API，並在正式部署時由後端同源提供靜態網頁，因此變更 port 後不需要另外調整前端設定；開發模式（`vite dev`）會在啟動時讀取同一份設定檔決定 API 代理目標。
+
+---
+
+## 👥 多人模式（登入 + 管理後台）
+
+預設的 `single` 模式與原本完全相同：不需登入，設定存在 `config.yaml`，`tronclass.bat`、`make start` 等用法都不受影響。
+
+想讓多人共用同一台伺服器時，把 `config.yaml` 的 `server.MODE` 改成 `multi`（或設定環境變數 `TRONCLASS_MODE=multi`）並重新啟動後端：
+
+1. 第一次開啟網頁會要求建立**管理員帳號**，原本 `config.yaml` 裡的 Tronclass 帳號、時段與 Webhook 會自動匯入這個帳號。
+2. 管理員在「管理後台」新增其他使用者（不開放自行註冊），把初始密碼交給對方；對方登入後可自行修改密碼。
+3. 每位使用者在「控制面板」填寫自己的 Tronclass 帳密、運行時段與 Webhook，按「開啟自動點名」即可。
+
+運作方式：
+
+- 每位使用者各有一個 pm2 程序 `tc-<帳號>`（執行 `maincode/bot.js`），互不影響。
+- 排程由後端每分鐘檢查一次，依各人的時段自動啟動 / 停止，因此**後端必須持續運行**，建議用 `npm run server:start` 交給 pm2 管理（停止：`npm run server:stop`）。
+- 管理後台可以看到每個人的程序狀態、最後檢查時間、最近錯誤、記憶體用量，查看 / 清空各自的程式日誌，並查詢稽核紀錄（登入、登入失敗、設定變更、啟停、帳號管理）。
+- 帳號資料、每人的設定與日誌存在 `maincode/data/`（已加入 `.gitignore`）。**Tronclass 密碼以明文保存**（與單人版的 `config.yaml` 相同），請確保伺服器本身的存取權限。
+- 登入使用 HttpOnly Cookie；同一 IP 或帳號 15 分鐘內失敗 10 次會暫時鎖定。若放在 nginx 等反向代理後面，請設定 `TRUST_PROXY=1` 並使用 HTTPS。
 
 ---
 

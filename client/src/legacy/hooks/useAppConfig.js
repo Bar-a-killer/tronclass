@@ -1,32 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { me } from '../api/client.js';
+import { getConfig, saveConfig } from '../api/client.js';
 import { normalizeConfig, toDraft, toPayload, validateDraft } from '../utils/config.js';
 
-// 後端不會回傳 Tronclass 密碼,只回傳 hasPassword;密碼欄留空 = 沿用原密碼
-export function useAppConfig(addLog, onSaved) {
+// saved.tron.TRON_PASS 保存後端目前的明文密碼,只用於「密碼留空 = 沿用」,不可渲染到畫面上。
+// 後端 save-config 以整個 section 覆蓋,所以送出時必須把原密碼補回去。
+export function useAppConfig(addLog) {
   const [status, setStatus] = useState('loading');
   const [saved, setSaved] = useState(null);
-  const [hasPassword, setHasPassword] = useState(false);
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
-
-  const apply = useCallback((data) => {
-    const config = normalizeConfig(data);
-    setSaved(config);
-    setDraft(toDraft(config));
-    setHasPassword(Boolean(data.hasPassword));
-  }, []);
 
   const load = useCallback(async () => {
     setStatus('loading');
     try {
-      apply(await me.getConfig());
+      const config = normalizeConfig(await getConfig());
+      setSaved(config);
+      setDraft(toDraft(config));
       setStatus('ready');
     } catch (error) {
       addLog(`載入設定失敗:${error.message}`, 'error');
       setStatus('error');
     }
-  }, [addLog, apply]);
+  }, [addLog]);
 
   useEffect(() => {
     load();
@@ -36,7 +31,7 @@ export function useAppConfig(addLog, onSaved) {
     setDraft((prev) => ({ ...prev, [section]: { ...prev[section], [key]: value } }));
   }, []);
 
-  const errors = useMemo(() => (draft ? validateDraft(draft, { hasPassword }) : {}), [draft, hasPassword]);
+  const errors = useMemo(() => (draft ? validateDraft(draft) : {}), [draft]);
   const dirty = useMemo(
     () => Boolean(saved && draft) && JSON.stringify(draft) !== JSON.stringify(toDraft(saved)),
     [saved, draft],
@@ -51,15 +46,18 @@ export function useAppConfig(addLog, onSaved) {
     if (!canSave) return;
     setSaving(true);
     try {
-      apply(await me.saveConfig(toPayload(draft)));
-      addLog('設定已儲存,程序運行中需按「重新啟動」才會套用', 'success');
-      onSaved?.();
+      const payload = toPayload(draft, saved.tron.TRON_PASS);
+      await saveConfig(payload);
+      const next = normalizeConfig(payload);
+      setSaved(next);
+      setDraft(toDraft(next));
+      addLog('設定已儲存,重新啟動程序後生效', 'success');
     } catch (error) {
       addLog(`儲存設定失敗:${error.message}`, 'error');
     } finally {
       setSaving(false);
     }
-  }, [addLog, apply, canSave, draft, onSaved]);
+  }, [addLog, canSave, draft, saved]);
 
-  return { status, draft, errors, dirty, saving, canSave, hasPassword, setField, reset, save, reload: load };
+  return { status, draft, errors, dirty, saving, canSave, setField, reset, save, reload: load };
 }
