@@ -4,7 +4,7 @@
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install build build-ts build-ui build-pkg dev ui server main start stop reload restart delete list status logs clean
+.PHONY: help install build build-ts build-ui build-pkg dev ui server lan main start stop reload restart delete list status logs clean
 
 ## help: 顯示指令選單 (透過 Node.js 輸出，保證 UTF-8 中文不亂碼)
 help:
@@ -47,6 +47,10 @@ server:
 ## ui: 啟動前端開發伺服器
 ui:
 	npm run ui
+
+## lan: 同時啟動後端與前端 (前端開放區網存取)，Ctrl+C 一次關閉兩者
+lan:
+	npm run lan
 
 ## main: 直接在前台運行主點名程式
 main: build-ts

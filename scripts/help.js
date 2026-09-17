@@ -17,6 +17,7 @@ const helpText = `
   make dev         - 使用 ts-node 啟動開發模式
   make server      - 啟動 Express 後端 API 服務 (Port 3000)
   make ui          - 啟動前端 Vite 開發伺服器 (Port 5173)
+  make lan         - 同時啟動後端與前端 (前端開放區網存取)，Ctrl+C 一次關閉兩者
   make main        - 直接在前台運行巡檢點名主程式
 
 [PM2 背景服務管理]

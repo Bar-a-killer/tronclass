@@ -8,3 +8,5 @@ scheduler:
   STOP_HOUR: 18
   CHECK_INTERVAL: 1
 webhook: 'https://discordapp.com/api/webhooks/1111111111/AAAA'
+server:
+  PORT: 3000

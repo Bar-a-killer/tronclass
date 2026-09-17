@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { LogOut, Play, List, Trash2, Zap, Clock, Info, User, Settings, Globe, Code, ChevronDown, ChevronUp } from 'lucide-react'; 
 
 // --- API 服務設定 ---
-// ⚠️ 如果您在本地運行，請確保這個 URL 與您的 server.js 監聽的位址一致
-const API_BASE_URL = `http://${window.location.hostname}:3000`;
+// 相對路徑：正式環境由後端同源提供靜態檔案；開發模式則透過 vite.config.js 的 proxy 轉發到後端
+const API_BASE_URL = '';
 // --- 全域變數定義 ---
 const appId = 'local-app'; 
 
