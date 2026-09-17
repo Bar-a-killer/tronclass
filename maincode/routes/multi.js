@@ -204,7 +204,7 @@ router.put('/me/config', requireAuth, (req, res) => {
   res.json({ status: 'success', data: publicBotConfig(updated) });
 });
 
-// start = 開啟排程（在時段內就立即啟動）；stop = 關閉排程並停止；restart = 重新啟動套用新設定
+// start = 開啟排程（在時段內就立即啟動）；stop = 關閉排程並停止；delete = 關閉排程並從 pm2 移除；restart = 重新啟動套用新設定
 async function runBotAction(req, res, target, action) {
   const user = findUser(target);
   if (!user) return fail(res, 404, '找不到使用者');
@@ -221,6 +221,12 @@ async function runBotAction(req, res, target, action) {
       u.enabled = false;
     });
     await stopBot(target);
+  } else if (action === 'delete') {
+    // 從 pm2 移除程序並關閉排程，否則排程器會在下一分鐘把它重新建立
+    updateUser(target, (u) => {
+      u.enabled = false;
+    });
+    await deleteBot(target);
   } else if (action === 'restart') {
     const status = await getStatus(user);
     if (!status.shouldRun) return fail(res, 400, '目前不在運行時段或排程未開啟，無需重新啟動');
@@ -236,7 +242,10 @@ router.get('/me/bot', requireAuth, wrap(async (req, res) => {
   res.json({ status: 'success', data: await getStatus(req.user) });
 }));
 
-router.post('/me/bot/:action', requireAuth, wrap((req, res) => runBotAction(req, res, req.user.username, req.params.action)));
+router.post('/me/bot/:action', requireAuth, wrap((req, res) => {
+  if (req.params.action === 'delete') return fail(res, 403, '需要管理員權限');
+  return runBotAction(req, res, req.user.username, req.params.action);
+}));
 
 const logBytes = (req) => Math.min(Math.max(Number(req.query.kb) || 128, 4), 1024) * 1024;
 

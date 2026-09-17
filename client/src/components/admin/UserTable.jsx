@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Ban, KeyRound, Loader2, MoreHorizontal, Play, RotateCw, ScrollText, Shield, ShieldOff, Square, Trash2, UserCheck } from 'lucide-react';
+import { AlertTriangle, Ban, CircleOff, KeyRound, Loader2, MoreHorizontal, Play, RotateCw, ScrollText, Shield, ShieldOff, Square, Trash2, UserCheck } from 'lucide-react';
 import StatusBadge from '../StatusBadge.jsx';
 import { PHASE_LABELS, botStatusKey, formatDateTime, formatMemory, formatRelative } from '../../utils/status.js';
 
@@ -96,7 +96,7 @@ function StatusCell({ user }) {
   );
 }
 
-export default function UserTable({ users, currentUser, pending, onAction, onShowLogs, onResetPassword, onDelete }) {
+export default function UserTable({ users, currentUser, pending, onAction, onShowLogs, onResetPassword, onDelete, onDeleteProcess }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[820px] text-left text-sm">
@@ -172,6 +172,14 @@ export default function UserTable({ users, currentUser, pending, onAction, onSho
                     <IconButton label="查看 log" icon={ScrollText} onClick={() => onShowLogs(user.username)} />
                     <RowMenu
                       items={[
+                        {
+                          label: '刪除程序',
+                          icon: CircleOff,
+                          danger: true,
+                          disabled: busy || bot?.process?.status === 'missing',
+                          title: bot?.process?.status === 'missing' ? '目前沒有 pm2 程序' : '從 pm2 移除並關閉自動點名',
+                          onClick: () => onDeleteProcess(user.username),
+                        },
                         { label: '重設密碼', icon: KeyRound, onClick: () => onResetPassword(user.username) },
                         !self && (user.role === 'admin'
                           ? { label: '改為一般使用者', icon: ShieldOff, onClick: () => onAction(user.username, 'patch', { role: 'user' }) }

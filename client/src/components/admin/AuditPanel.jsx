@@ -15,6 +15,7 @@ const ACTION_LABELS = {
   'bot.start': '開啟自動點名',
   'bot.stop': '停止自動點名',
   'bot.restart': '重新啟動',
+  'bot.delete': '刪除程序',
   'admin.user.create': '新增使用者',
   'admin.user.update': '修改使用者',
   'admin.user.delete': '刪除使用者',

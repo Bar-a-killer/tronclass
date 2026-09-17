@@ -11,7 +11,7 @@ import { useAdminUsers } from '../hooks/useAdminUsers.js';
 import { admin } from '../api/client.js';
 import { botStatusKey } from '../utils/status.js';
 
-const ACTION_MESSAGES = { start: '已開啟自動點名', stop: '已停止自動點名', restart: '已重新啟動' };
+const ACTION_MESSAGES = { start: '已開啟自動點名', stop: '已停止自動點名', restart: '已重新啟動', delete: '的程序已刪除' };
 
 function patchMessage(username, patch) {
   if (patch.role) return `${username} 已${patch.role === 'admin' ? '設為管理員' : '改為一般使用者'}`;
@@ -134,6 +134,7 @@ export default function AdminPage({ currentUser }) {
               onShowLogs={(username) => setDialog({ type: 'logs', username })}
               onResetPassword={(username) => setDialog({ type: 'password', username })}
               onDelete={(username) => setDialog({ type: 'delete', username })}
+              onDeleteProcess={(username) => setDialog({ type: 'deleteProcess', username })}
             />
           )}
         </Card>
@@ -159,6 +160,19 @@ export default function AdminPage({ currentUser }) {
           username={dialog.username}
           onClose={close}
           onSubmit={(password) => perform(`${dialog.username}:patch`, () => admin.updateUser(dialog.username, { password }), `已重設 ${dialog.username} 的密碼`)}
+        />
+      )}
+      {dialog?.type === 'deleteProcess' && (
+        <ConfirmDialog
+          title={`刪除 ${dialog.username} 的程序?`}
+          message="會從 PM2 移除這位使用者的點名程式並關閉自動點名。帳號、設定與 log 都會保留,之後按「開啟自動點名」即可重新建立。"
+          confirmLabel="刪除程序"
+          onCancel={close}
+          onConfirm={() => {
+            const { username } = dialog;
+            close();
+            onAction(username, 'delete');
+          }}
         />
       )}
       {dialog?.type === 'delete' && (
